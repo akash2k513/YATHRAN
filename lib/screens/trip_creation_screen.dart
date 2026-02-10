@@ -3,10 +3,16 @@ import 'package:yathran/screens/mood_selection_screen.dart';
 import 'package:yathran/models/trip_model.dart';
 
 class TripCreationScreen extends StatefulWidget {
+<<<<<<< HEAD
   // ✅ CHANGE 1: Add optional destination parameter
   final String? destination;
 
   TripCreationScreen({this.destination});
+=======
+  final Map<String, dynamic>? destinationData; // Add this parameter
+
+  TripCreationScreen({this.destinationData}); // Add constructor
+>>>>>>> cab3063200d51d0b55ef546b10db7dcf3a8c536b
 
   @override
   _TripCreationScreenState createState() => _TripCreationScreenState();
@@ -20,19 +26,45 @@ class _TripCreationScreenState extends State<TripCreationScreen> {
   String _tripType = 'Solo';
   final List<String> _tripTypes = ['Solo', 'Family', 'Friends', 'Couple'];
 
+<<<<<<< HEAD
   // ✅ CHANGE 2: Auto-fill destination if received
   @override
   void initState() {
     super.initState();
     if (widget.destination != null && widget.destination!.isNotEmpty) {
       _destinationController.text = widget.destination!;
+=======
+  @override
+  void initState() {
+    super.initState();
+
+    // Auto-fill data if destinationData is provided
+    if (widget.destinationData != null) {
+      _destinationController.text = widget.destinationData!['name'] ?? '';
+
+      // Parse budget from price range (e.g., "\$1,500-\$3,000")
+      final priceRange = widget.destinationData!['priceRange'] ?? '';
+      final priceMatch = RegExp(r'\$([\d,]+)').firstMatch(priceRange);
+      if (priceMatch != null) {
+        final priceStr = priceMatch.group(1)!.replaceAll(',', '');
+        final price = double.tryParse(priceStr);
+        if (price != null) {
+          _budget = price;
+        }
+      }
+
+      // Set default dates (next month)
+      final now = DateTime.now();
+      _startDate = DateTime(now.year, now.month + 1, 1);
+      _endDate = DateTime(now.year, now.month + 1, 7);
+>>>>>>> cab3063200d51d0b55ef546b10db7dcf3a8c536b
     }
   }
 
   Future<void> _selectDate(BuildContext context, bool isStart) async {
     final DateTime? picked = await showDatePicker(
       context: context,
-      initialDate: DateTime.now(),
+      initialDate: isStart ? (_startDate ?? DateTime.now()) : (_endDate ?? DateTime.now().add(Duration(days: 7))),
       firstDate: DateTime.now(),
       lastDate: DateTime.now().add(Duration(days: 365)),
     );
@@ -64,12 +96,14 @@ class _TripCreationScreenState extends State<TripCreationScreen> {
       return;
     }
 
+    // Create trip with optional destination data
     final trip = Trip(
       destination: _destinationController.text,
       startDate: _startDate!,
       endDate: _endDate!,
       budget: _budget,
       tripType: _tripType,
+      destinationData: widget.destinationData, // Pass along the destination data
     );
 
     Navigator.push(
@@ -85,12 +119,66 @@ class _TripCreationScreenState extends State<TripCreationScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text('Create New Trip'),
+        backgroundColor: Color(0xFF2F62A7),
       ),
       body: SingleChildScrollView(
         padding: EdgeInsets.all(20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // Show destination info if coming from trending
+            if (widget.destinationData != null) ...[
+              Container(
+                padding: EdgeInsets.all(15),
+                margin: EdgeInsets.only(bottom: 20),
+                decoration: BoxDecoration(
+                  color: Color(0xFFE3F2FD),
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: Color(0xFF4AB4DE).withOpacity(0.3)),
+                ),
+                child: Row(
+                  children: [
+                    Icon(Icons.info, color: Color(0xFF2F62A7)),
+                    SizedBox(width: 10),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Creating trip for:',
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: Color(0xFF2F62A7),
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          SizedBox(height: 5),
+                          Text(
+                            widget.destinationData!['name'] ?? '',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFF1A3E6D),
+                            ),
+                          ),
+                          SizedBox(height: 5),
+                          Text(
+                            widget.destinationData!['reason'] ?? '',
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: Colors.grey[700],
+                            ),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+
             Text(
               'Trip Details',
               style: TextStyle(
@@ -99,18 +187,30 @@ class _TripCreationScreenState extends State<TripCreationScreen> {
                 color: Color(0xFF2F62A7),
               ),
             ),
-            SizedBox(height: 30),
+            SizedBox(height: 20),
 
             // Destination
             TextField(
               controller: _destinationController,
               decoration: InputDecoration(
                 labelText: 'Destination',
-                prefixIcon: Icon(Icons.location_on),
+                prefixIcon: Icon(Icons.location_on, color: Color(0xFF2F62A7)),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(10),
                 ),
+                enabledBorder: OutlineInputBorder(
+                  borderSide: BorderSide(color: Colors.grey),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderSide: BorderSide(color: Color(0xFF4AB4DE)),
+                  borderRadius: BorderRadius.circular(10),
+                ),
                 hintText: 'e.g., Paris, France',
+                filled: widget.destinationData != null,
+                fillColor: widget.destinationData != null
+                    ? Color(0xFFF0F8FF)
+                    : Colors.transparent,
               ),
             ),
             SizedBox(height: 20),
@@ -137,7 +237,7 @@ class _TripCreationScreenState extends State<TripCreationScreen> {
                             _startDate != null
                                 ? '${_startDate!.day}/${_startDate!.month}/${_startDate!.year}'
                                 : 'Select Date',
-                            style: TextStyle(fontSize: 16),
+                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
                           ),
                         ],
                       ),
@@ -164,7 +264,7 @@ class _TripCreationScreenState extends State<TripCreationScreen> {
                             _endDate != null
                                 ? '${_endDate!.day}/${_endDate!.month}/${_endDate!.year}'
                                 : 'Select Date',
-                            style: TextStyle(fontSize: 16),
+                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
                           ),
                         ],
                       ),
@@ -249,7 +349,7 @@ class _TripCreationScreenState extends State<TripCreationScreen> {
                 onPressed: _proceedToMoodSelection,
                 child: Text(
                   'Continue to Mood Selection',
-                  style: TextStyle(fontSize: 18),
+                  style: TextStyle(fontSize: 18, color: Colors.white),
                 ),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Color(0xFF2F62A7),
