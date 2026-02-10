@@ -4,6 +4,7 @@ import 'package:yathran/screens/profile_screen.dart';
 import 'package:yathran/screens/trending_destinations_screen.dart';
 import 'package:yathran/screens/crowd_insights_screen.dart';
 import 'package:yathran/screens/map_screen.dart';
+import 'package:yathran/screens/settings_screen.dart';
 import 'package:yathran/models/trip_model.dart';
 import 'package:provider/provider.dart';
 import 'package:yathran/services/auth_service.dart';
@@ -16,7 +17,6 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateMixin {
-  List<Trip> savedTrips = [];
   int _selectedIndex = 0;
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
@@ -33,7 +33,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
       'crowdLevel': 'Medium',
       'bestTime': 'May - October',
       'moods': ['Romantic', 'Photography', 'Relaxation'],
-      'priceRange': '14700 Dollars',
+      'priceRange': '2200 USD',
     },
     {
       'id': '2',
@@ -43,7 +43,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
       'crowdLevel': 'High',
       'bestTime': 'Spring & Autumn',
       'moods': ['Cultural', 'Spiritual', 'Food Exploration'],
-      'priceRange': '10000 Dollars',
+      'priceRange': '2400 USD',
     },
     {
       'id': '3',
@@ -53,7 +53,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
       'crowdLevel': 'Low',
       'bestTime': 'June - September',
       'moods': ['Adventure', 'Nature', 'Family'],
-      'priceRange': '13500 Dollars',
+      'priceRange': '3500 USD',
     },
     {
       'id': '4',
@@ -63,7 +63,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
       'crowdLevel': 'Medium',
       'bestTime': 'April - October',
       'moods': ['Adventure', 'Relaxation', 'Spiritual'],
-      'priceRange': '1000 Dollars',
+      'priceRange': '1000 USD',
     },
     {
       'id': '5',
@@ -73,7 +73,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
       'crowdLevel': 'High',
       'bestTime': 'November - March',
       'moods': ['Shopping', 'Luxury', 'Adventure'],
-      'priceRange': '7000 Dollars',
+      'priceRange': '10000 USD',
     },
   ];
 
@@ -116,9 +116,6 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
 
     // Auto-rotate carousel
     _startCarouselAutoRotation();
-
-    // Load initial data
-    _loadInitialData();
   }
 
   void _startCarouselAutoRotation() {
@@ -136,30 +133,6 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     });
   }
 
-  void _loadInitialData() async {
-    await Future.delayed(Duration(milliseconds: 500));
-    setState(() {
-      savedTrips = [
-        Trip(
-          destination: 'Paris, France',
-          startDate: DateTime.now().add(Duration(days: 30)),
-          endDate: DateTime.now().add(Duration(days: 37)),
-          budget: 2000,
-          tripType: 'Couple',
-          selectedMoods: ['Romantic', 'Food Exploration', 'Photography'],
-        ),
-        Trip(
-          destination: 'Tokyo, Japan',
-          startDate: DateTime.now().add(Duration(days: 60)),
-          endDate: DateTime.now().add(Duration(days: 67)),
-          budget: 2500,
-          tripType: 'Solo',
-          selectedMoods: ['Adventure', 'Food Exploration', 'Shopping'],
-        ),
-      ];
-    });
-  }
-
   void _logout() async {
     final authService = Provider.of<AuthService>(context, listen: false);
     await authService.logout();
@@ -171,6 +144,15 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
       context,
       MaterialPageRoute(
         builder: (context) => ProfileScreen(),
+      ),
+    );
+  }
+
+  void _showSettings() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => SettingsScreen(),
       ),
     );
   }
@@ -203,13 +185,23 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
       // Home - already here
         break;
       case 1:
-      // Search - show search screen
+      // Explore - show map
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => MapScreen(
+              showCrowdHeatmap: true,
+            ),
+          ),
+        );
         break;
       case 2:
-      // Saved trips
+      // AI Companion
+        Navigator.pushNamed(context, '/ai-companion');
         break;
       case 3:
-        _showProfile();
+      // Settings
+        _showSettings();
         break;
     }
   }
@@ -329,36 +321,9 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                     _buildTopPlacesCarousel(),
                     SizedBox(height: 30),
 
-                    // Start New Trip Card
-                    _buildFeatureCard(
-                      title: 'Start New Trip',
-                      subtitle: 'AI-powered travel planning',
-                      icon: Icons.add_circle_outline,
-                      color: Color(0xFF2F62A7),
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          PageRouteBuilder(
-                            pageBuilder: (context, animation, secondaryAnimation) => TripCreationScreen(),
-                            transitionDuration: Duration(milliseconds: 400),
-                            transitionsBuilder: (context, animation, secondaryAnimation, child) {
-                              return SlideTransition(
-                                position: Tween<Offset>(
-                                  begin: Offset(1.0, 0.0),
-                                  end: Offset.zero,
-                                ).animate(animation),
-                                child: child,
-                              );
-                            },
-                          ),
-                        );
-                      },
-                    ),
-                    SizedBox(height: 20),
-
-                    // Quick Features Grid
+                    // Quick Features Grid - Improved UI
                     Text(
-                      'Quick Features',
+                      'Quick Actions',
                       style: TextStyle(
                         fontSize: 22,
                         fontWeight: FontWeight.bold,
@@ -366,24 +331,47 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                       ),
                     ),
                     SizedBox(height: 10),
+                    Text(
+                      'Everything you need for smart travel planning',
+                      style: TextStyle(
+                        color: Colors.grey,
+                        fontSize: 14,
+                      ),
+                    ),
+                    SizedBox(height: 15),
                     GridView.count(
                       shrinkWrap: true,
                       physics: NeverScrollableScrollPhysics(),
                       crossAxisCount: 2,
-                      childAspectRatio: 1.5,
-                      crossAxisSpacing: 10,
-                      mainAxisSpacing: 10,
+                      childAspectRatio: 1.4,
+                      crossAxisSpacing: 15,
+                      mainAxisSpacing: 15,
                       children: [
-                        _buildQuickFeature(
-                          title: 'Saved Trips',
-                          icon: Icons.bookmark,
-                          count: savedTrips.length,
-                          color: Color(0xFF3B8AC3),
+                        _buildQuickAction(
+                          title: 'Plan New Trip',
+                          icon: Icons.add_location_alt,
+                          color: Color(0xFF2F62A7),
+                          gradientColors: [
+                            Color(0xFF2F62A7),
+                            Color(0xFF3B8AC3),
+                          ],
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => TripCreationScreen(),
+                              ),
+                            );
+                          },
                         ),
-                        _buildQuickFeature(
+                        _buildQuickAction(
                           title: 'Live Map',
                           icon: Icons.map,
                           color: Color(0xFF4AB4DE),
+                          gradientColors: [
+                            Color(0xFF4AB4DE),
+                            Color(0xFF3B8AC3),
+                          ],
                           onTap: () {
                             Navigator.push(
                               context,
@@ -395,16 +383,24 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                             );
                           },
                         ),
-                        _buildQuickFeature(
+                        _buildQuickAction(
                           title: 'Trending',
                           icon: Icons.trending_up,
                           color: Color(0xFF4AB4DE),
+                          gradientColors: [
+                            Color(0xFF4AB4DE),
+                            Color(0xFF3B8AC3),
+                          ],
                           onTap: _viewTrendingDestinations,
                         ),
-                        _buildQuickFeature(
+                        _buildQuickAction(
                           title: 'Crowd Insights',
-                          icon: Icons.people,
+                          icon: Icons.insights,
                           color: Color(0xFF2F62A7),
+                          gradientColors: [
+                            Color(0xFF2F62A7),
+                            Color(0xFF3B8AC3),
+                          ],
                           onTap: _viewCrowdInsights,
                         ),
                       ],
@@ -418,23 +414,15 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                     ),
                     SizedBox(height: 10),
                     ...aiSuggestions.map((suggestion) => _buildSuggestionCard(suggestion)).toList(),
-                    SizedBox(height: 30),
+                    SizedBox(height: 20),
 
-                    // Saved Trips
+                    // Popular Categories
                     _buildSectionHeader(
-                      title: 'Saved Trips',
-                      subtitle: 'Your planned adventures',
+                      title: 'Popular Categories',
+                      subtitle: 'Browse by travel interests',
                     ),
                     SizedBox(height: 10),
-                    savedTrips.isEmpty
-                        ? _buildEmptyState(
-                      icon: Icons.travel_explore,
-                      title: 'No trips saved yet',
-                      subtitle: 'Start planning your first adventure!',
-                    )
-                        : Column(
-                      children: savedTrips.map((trip) => _buildTripCard(trip)).toList(),
-                    ),
+                    _buildCategoryGrid(),
                   ],
                 ),
               ),
@@ -443,32 +431,6 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
         ),
       ),
       bottomNavigationBar: _buildBottomNavigationBar(),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () {
-          Navigator.push(
-            context,
-            PageRouteBuilder(
-              pageBuilder: (context, animation, secondaryAnimation) => TripCreationScreen(),
-              transitionDuration: Duration(milliseconds: 400),
-              transitionsBuilder: (context, animation, secondaryAnimation, child) {
-                return ScaleTransition(
-                  scale: animation,
-                  child: child,
-                );
-              },
-            ),
-          );
-        },
-        backgroundColor: Color(0xFF2F62A7),
-        foregroundColor: Colors.white,
-        icon: Icon(Icons.add),
-        label: Text('New Trip'),
-        elevation: 8,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(30),
-        ),
-      ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
     );
   }
 
@@ -514,8 +476,11 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
           ),
         ),
         SizedBox(height: 20),
-        Container(
-          height: 250,
+        // FIXED: Added height constraint to prevent overflow
+        ConstrainedBox(
+          constraints: BoxConstraints(
+            maxHeight: 300, // Increased to accommodate all content
+          ),
           child: PageView.builder(
             controller: _carouselController,
             itemCount: topPlaces.length,
@@ -566,217 +531,592 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
       ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(20),
-        child: Stack(
-          children: [
-            // Background Image
-            Container(
-              width: double.infinity,
-              decoration: BoxDecoration(
-                image: DecorationImage(
-                  image: NetworkImage(place['image']),
-                  fit: BoxFit.cover,
+        child: Container(
+          height: 280, // Fixed height to prevent overflow
+          child: Stack(
+            children: [
+              // Background Image
+              Container(
+                width: double.infinity,
+                decoration: BoxDecoration(
+                  image: DecorationImage(
+                    image: NetworkImage(place['image']),
+                    fit: BoxFit.cover,
+                  ),
                 ),
               ),
-            ),
 
-            // Gradient Overlay
-            Container(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.bottomCenter,
-                  end: Alignment.topCenter,
-                  colors: [
-                    Colors.black.withOpacity(0.8),
-                    Colors.transparent,
-                    Colors.transparent,
-                    Colors.black.withOpacity(0.2),
-                  ],
+              // Gradient Overlay
+              Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.bottomCenter,
+                    end: Alignment.topCenter,
+                    colors: [
+                      Colors.black.withOpacity(0.8),
+                      Colors.transparent,
+                      Colors.transparent,
+                      Colors.black.withOpacity(0.2),
+                    ],
+                  ),
                 ),
               ),
-            ),
 
-            // Content
-            Padding(
-              padding: EdgeInsets.all(20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  // Crowd Level Badge
-                  Container(
-                    padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: _getCrowdColor(place['crowdLevel']).withOpacity(0.9),
-                      borderRadius: BorderRadius.circular(20),
+              // Content - Added constraints to prevent text overflow
+              Padding(
+                padding: EdgeInsets.all(15),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    // Crowd Level Badge
+                    Container(
+                      padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: _getCrowdColor(place['crowdLevel']).withOpacity(0.9),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.people, size: 14, color: Colors.white),
+                          SizedBox(width: 5),
+                          Text(
+                            place['crowdLevel'],
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 12,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
+                    SizedBox(height: 8),
+
+                    // Place Name
+                    Text(
+                      place['name'],
+                      style: TextStyle(
+                        fontSize: 20, // Reduced font size
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                        shadows: [
+                          Shadow(
+                            blurRadius: 10,
+                            color: Colors.black.withOpacity(0.5),
+                          ),
+                        ],
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    SizedBox(height: 4),
+
+                    // Description
+                    Text(
+                      place['description'],
+                      style: TextStyle(
+                        fontSize: 13, // Reduced font size
+                        color: Colors.white.withOpacity(0.9),
+                        shadows: [
+                          Shadow(
+                            blurRadius: 5,
+                            color: Colors.black.withOpacity(0.5),
+                          ),
+                        ],
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    SizedBox(height: 8),
+
+                    // Details Row
+                    Row(
                       children: [
-                        Icon(Icons.people, size: 14, color: Colors.white),
-                        SizedBox(width: 5),
+                        Icon(Icons.calendar_today, size: 12, color: Colors.white70),
+                        SizedBox(width: 4),
+                        Expanded(
+                          child: Text(
+                            place['bestTime'],
+                            style: TextStyle(color: Colors.white70, fontSize: 11),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        SizedBox(width: 15),
+                        Icon(Icons.attach_money, size: 12, color: Colors.white70),
+                        SizedBox(width: 4),
                         Text(
-                          place['crowdLevel'],
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 12,
+                          place['priceRange'],
+                          style: TextStyle(color: Colors.white70, fontSize: 11),
+                        ),
+                      ],
+                    ),
+                    SizedBox(height: 8),
+
+                    // Mood Tags - Limited to 2 lines
+                    Container(
+                      height: 32, // Fixed height for tags
+                      child: Wrap(
+                        spacing: 6,
+                        runSpacing: 4,
+                        children: (place['moods'] as List<String>)
+                            .take(3)
+                            .map((mood) => Container(
+                          padding: EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.2),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: Colors.white.withOpacity(0.3)),
+                          ),
+                          child: Text(
+                            mood,
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 9, // Reduced font size
+                            ),
+                          ),
+                        ))
+                            .toList(),
+                      ),
+                    ),
+                    SizedBox(height: 10),
+
+                    // Action Buttons - Made more compact
+                    Row(
+                      children: [
+                        Expanded(
+                          child: ElevatedButton.icon(
+                            onPressed: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => TripCreationScreen(),
+                                ),
+                              );
+                            },
+                            icon: Icon(Icons.airplanemode_active, size: 14),
+                            label: Text('Plan Trip', style: TextStyle(fontSize: 12)),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Color(0xFF2F62A7),
+                              foregroundColor: Colors.white,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              padding: EdgeInsets.symmetric(vertical: 8),
+                            ),
+                          ),
+                        ),
+                        SizedBox(width: 8),
+                        Container(
+                          width: 40,
+                          height: 40,
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.2),
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(color: Colors.white.withOpacity(0.3)),
+                          ),
+                          child: IconButton(
+                            icon: Icon(Icons.info_outline, color: Colors.white, size: 18),
+                            onPressed: () {
+                              _showPlaceDetails(place);
+                            },
+                            padding: EdgeInsets.zero,
                           ),
                         ),
                       ],
                     ),
-                  ),
-                  SizedBox(height: 10),
+                  ],
+                ),
+              ),
 
-                  // Place Name
-                  Text(
-                    place['name'],
-                    style: TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
+              // Favorite Button
+              Positioned(
+                top: 10,
+                right: 10,
+                child: Container(
+                  width: 36,
+                  height: 36,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(18),
+                    border: Border.all(color: Colors.white.withOpacity(0.3)),
+                  ),
+                  child: IconButton(
+                    icon: Icon(Icons.favorite_border, color: Colors.white, size: 18),
+                    onPressed: () {
+                      NotificationService().sendNotification(
+                        context: context,
+                        title: 'Added to Favorites',
+                        message: '${place['name']} added to your favorites',
+                        type: 'success',
+                      );
+                    },
+                    padding: EdgeInsets.zero,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildQuickAction({
+    required String title,
+    required IconData icon,
+    required Color color,
+    required List<Color> gradientColors,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(15),
+      child: Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(15),
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: gradientColors,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: color.withOpacity(0.3),
+              blurRadius: 10,
+              offset: Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Stack(
+          children: [
+            // Background pattern
+            Positioned(
+              right: 10,
+              bottom: 10,
+              child: Opacity(
+                opacity: 0.1,
+                child: Icon(
+                  icon,
+                  size: 60,
+                  color: Colors.white,
+                ),
+              ),
+            ),
+            Padding(
+              padding: EdgeInsets.all(15),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.2),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Icon(
+                      icon,
                       color: Colors.white,
-                      shadows: [
-                        Shadow(
-                          blurRadius: 10,
-                          color: Colors.black.withOpacity(0.5),
-                        ),
-                      ],
+                      size: 24,
                     ),
                   ),
-                  SizedBox(height: 5),
-
-                  // Description
+                  SizedBox(height: 10),
                   Text(
-                    place['description'],
+                    title,
                     style: TextStyle(
-                      fontSize: 14,
-                      color: Colors.white.withOpacity(0.9),
-                      shadows: [
-                        Shadow(
-                          blurRadius: 5,
-                          color: Colors.black.withOpacity(0.5),
-                        ),
-                      ],
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
                     ),
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                   ),
-                  SizedBox(height: 10),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 
-                  // Details Row
-                  Row(
-                    children: [
-                      Icon(Icons.calendar_today, size: 14, color: Colors.white70),
-                      SizedBox(width: 5),
-                      Text(
-                        place['bestTime'],
-                        style: TextStyle(color: Colors.white70, fontSize: 12),
-                      ),
-                      SizedBox(width: 20),
-                      Icon(Icons.attach_money, size: 14, color: Colors.white70),
-                      SizedBox(width: 5),
-                      Text(
-                        place['priceRange'],
-                        style: TextStyle(color: Colors.white70, fontSize: 12),
-                      ),
+  Widget _buildSectionHeader({required String title, required String subtitle}) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          title,
+          style: TextStyle(
+            fontSize: 22,
+            fontWeight: FontWeight.bold,
+            color: Color(0xFF2F62A7),
+          ),
+        ),
+        SizedBox(height: 5),
+        Text(
+          subtitle,
+          style: TextStyle(
+            color: Colors.grey,
+            fontSize: 14,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSuggestionCard(Map<String, dynamic> suggestion) {
+    return Card(
+      margin: EdgeInsets.only(bottom: 10),
+      elevation: 2,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: InkWell(
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => TripCreationScreen(),
+            ),
+          );
+        },
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: EdgeInsets.all(15),
+          child: Row(
+            children: [
+              Container(
+                width: 60,
+                height: 60,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(10),
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      Color(0xFF4AB4DE),
+                      Color(0xFF3B8AC3),
                     ],
                   ),
-                  SizedBox(height: 10),
-
-                  // Mood Tags
-                  Wrap(
-                    spacing: 8,
-                    children: (place['moods'] as List<String>)
-                        .take(3)
-                        .map((mood) => Container(
-                      padding: EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.2),
-                        borderRadius: BorderRadius.circular(15),
-                        border: Border.all(color: Colors.white.withOpacity(0.3)),
+                ),
+                child: Icon(Icons.lightbulb_outline, color: Colors.white, size: 30),
+              ),
+              SizedBox(width: 15),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      suggestion['destination'],
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF2F62A7),
+                        fontSize: 16,
                       ),
-                      child: Text(
-                        mood,
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 10,
-                        ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    SizedBox(height: 5),
+                    Text(
+                      suggestion['reason'],
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Colors.grey[700],
                       ),
-                    ))
-                        .toList(),
-                  ),
-                  SizedBox(height: 15),
-
-                  // Action Buttons
-                  Row(
-                    children: [
-                      Expanded(
-                        child: ElevatedButton.icon(
-                          onPressed: () {
-                            // Plan trip to this place
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => TripCreationScreen(),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    SizedBox(height: 8),
+                    Row(
+                      children: [
+                        Container(
+                          padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: _getCrowdColor(suggestion['crowdLevel']).withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.people, size: 12, color: _getCrowdColor(suggestion['crowdLevel'])),
+                              SizedBox(width: 4),
+                              Text(
+                                suggestion['crowdLevel'],
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: _getCrowdColor(suggestion['crowdLevel']),
+                                  fontWeight: FontWeight.bold,
+                                ),
                               ),
-                            );
-                          },
-                          icon: Icon(Icons.airplanemode_active, size: 16),
-                          label: Text('Plan Trip'),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Color(0xFF2F62A7),
-                            foregroundColor: Colors.white,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                            padding: EdgeInsets.symmetric(vertical: 12),
+                            ],
                           ),
                         ),
-                      ),
-                      SizedBox(width: 10),
+                        SizedBox(width: 10),
+                        Icon(Icons.calendar_today, size: 12, color: Colors.grey),
+                        SizedBox(width: 4),
+                        Text(
+                          suggestion['bestTime'],
+                          style: TextStyle(fontSize: 12, color: Colors.grey),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              Icon(Icons.chevron_right, color: Color(0xFF4AB4DE)),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCategoryGrid() {
+    List<Map<String, dynamic>> categories = [
+      {
+        'title': 'Beach',
+        'icon': Icons.beach_access,
+        'color': Colors.blue,
+        'count': '12 places',
+      },
+      {
+        'title': 'Mountain',
+        'icon': Icons.terrain,
+        'color': Colors.green,
+        'count': '8 places',
+      },
+      {
+        'title': 'City',
+        'icon': Icons.location_city,
+        'color': Colors.orange,
+        'count': '15 places',
+      },
+      {
+        'title': 'Cultural',
+        'icon': Icons.account_balance,
+        'color': Colors.purple,
+        'count': '10 places',
+      },
+    ];
+
+    return GridView.count(
+      shrinkWrap: true,
+      physics: NeverScrollableScrollPhysics(),
+      crossAxisCount: 2,
+      childAspectRatio: 1.8,
+      crossAxisSpacing: 10,
+      mainAxisSpacing: 10,
+      children: categories.map((category) {
+        return Card(
+          elevation: 2,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: InkWell(
+            onTap: () {
+              // Navigate to category-based search
+            },
+            borderRadius: BorderRadius.circular(12),
+            child: Padding(
+              padding: EdgeInsets.all(12), // Reduced padding
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Row(
+                    children: [
                       Container(
+                        width: 36, // Reduced size
+                        height: 36,
                         decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.2),
-                          shape: BoxShape.circle,
-                          border: Border.all(color: Colors.white.withOpacity(0.3)),
+                          color: category['color'].withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(8), // Reduced radius
                         ),
-                        child: IconButton(
-                          icon: Icon(Icons.info_outline, color: Colors.white),
-                          onPressed: () {
-                            _showPlaceDetails(place);
-                          },
+                        child: Icon(
+                          category['icon'],
+                          color: category['color'],
+                          size: 20, // Reduced icon size
                         ),
                       ),
+                      Spacer(),
+                      Icon(Icons.chevron_right, color: Colors.grey, size: 18),
                     ],
+                  ),
+                  SizedBox(height: 8),
+                  Text(
+                    category['title'],
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 15, // Slightly reduced
+                      color: Color(0xFF2F62A7),
+                    ),
+                  ),
+                  Text(
+                    category['count'],
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.grey,
+                    ),
                   ),
                 ],
               ),
             ),
+          ),
+        );
+      }).toList(),
+    );
+  }
 
-            // Favorite Button
-            Positioned(
-              top: 15,
-              right: 15,
-              child: Container(
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.2),
-                  shape: BoxShape.circle,
-                  border: Border.all(color: Colors.white.withOpacity(0.3)),
-                ),
-                child: IconButton(
-                  icon: Icon(Icons.favorite_border, color: Colors.white),
-                  onPressed: () {
-                    // Add to favorites
-                    NotificationService().sendNotification(
-                      context: context,
-                      title: 'Added to Favorites',
-                      message: '${place['name']} added to your favorites',
-                      type: 'success',
-                    );
-                  },
-                ),
-              ),
+  Widget _buildBottomNavigationBar() {
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.only(
+          topLeft: Radius.circular(20),
+          topRight: Radius.circular(20),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 20,
+            spreadRadius: 1,
+          ),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.only(
+          topLeft: Radius.circular(20),
+          topRight: Radius.circular(20),
+        ),
+        child: BottomNavigationBar(
+          items: const <BottomNavigationBarItem>[
+            BottomNavigationBarItem(
+              icon: Icon(Icons.home),
+              label: 'Home',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.explore),
+              label: 'Explore',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.smart_toy),
+              label: 'AI',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.settings),
+              label: 'Settings',
             ),
           ],
+          currentIndex: _selectedIndex,
+          selectedItemColor: Color(0xFF2F62A7),
+          unselectedItemColor: Colors.grey,
+          showUnselectedLabels: true,
+          type: BottomNavigationBarType.fixed,
+          onTap: _onItemTapped,
+          elevation: 10,
         ),
       ),
     );
@@ -788,7 +1128,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (context) => Container(
-        height: MediaQuery.of(context).size.height * 0.8,
+        height: MediaQuery.of(context).size.height * 0.85, // Reduced slightly
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.vertical(top: Radius.circular(25)),
@@ -847,7 +1187,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                           child: Text(
                             place['name'],
                             style: TextStyle(
-                              fontSize: 28,
+                              fontSize: 24, // Reduced
                               fontWeight: FontWeight.bold,
                               color: Color(0xFF2F62A7),
                             ),
@@ -873,7 +1213,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
 
                     Text(
                       place['description'],
-                      style: TextStyle(fontSize: 16, color: Colors.grey[700]),
+                      style: TextStyle(fontSize: 16, color: Colors.black),
                     ),
                     SizedBox(height: 20),
 
@@ -941,19 +1281,19 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                         children: [
                           Text(
                             '• Perfect weather conditions',
-                            style: TextStyle(color: Colors.grey[700]),
+                            style: TextStyle(color: Colors.black),
                           ),
                           Text(
                             '• Lower prices than peak season',
-                            style: TextStyle(color: Colors.grey[700]),
+                            style: TextStyle(color: Colors.black),
                           ),
                           Text(
                             '• Cultural festivals happening',
-                            style: TextStyle(color: Colors.grey[700]),
+                            style: TextStyle(color: Colors.black),
                           ),
                           Text(
                             '• Less crowded than usual',
-                            style: TextStyle(color: Colors.grey[700]),
+                            style: TextStyle(color: Colors.black),
                           ),
                         ],
                       ),
@@ -1005,29 +1345,6 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     );
   }
 
-  IconData _getMoodIcon(String mood) {
-    switch (mood.toLowerCase()) {
-      case 'romantic':
-        return Icons.favorite;
-      case 'adventure':
-        return Icons.terrain;
-      case 'nature':
-        return Icons.park;
-      case 'cultural':
-        return Icons.account_balance;
-      case 'relaxation':
-        return Icons.spa;
-      case 'shopping':
-        return Icons.shopping_bag;
-      case 'food exploration':
-        return Icons.restaurant;
-      case 'photography':
-        return Icons.camera_alt;
-      default:
-        return Icons.emoji_emotions;
-    }
-  }
-
   Widget _buildDetailItem(IconData icon, String label, String value) {
     return Container(
       padding: EdgeInsets.all(12),
@@ -1064,362 +1381,26 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     );
   }
 
-  Widget _buildFeatureCard({
-    required String title,
-    required String subtitle,
-    required IconData icon,
-    required Color color,
-    required VoidCallback onTap,
-  }) {
-    return Card(
-      elevation: 4,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(15),
-      ),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(15),
-        child: Container(
-          padding: EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(15),
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [color, color.withOpacity(0.8)],
-            ),
-          ),
-          child: Row(
-            children: [
-              Icon(icon, size: 40, color: Colors.white),
-              SizedBox(width: 15),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      title,
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                      ),
-                    ),
-                    SizedBox(height: 5),
-                    Text(
-                      subtitle,
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Colors.white70,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              Icon(Icons.chevron_right, color: Colors.white),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildQuickFeature({
-    required String title,
-    required IconData icon,
-    Color color = Colors.blue,
-    int count = 0,
-    VoidCallback? onTap,
-  }) {
-    return Card(
-      elevation: 2,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
-        child: Container(
-          padding: EdgeInsets.all(15),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(12),
-            color: Colors.white,
-          ),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Container(
-                width: 50,
-                height: 50,
-                decoration: BoxDecoration(
-                  color: color.withOpacity(0.1),
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(icon, color: color, size: 24),
-              ),
-              SizedBox(height: 10),
-              Text(
-                title,
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  color: Colors.grey[800],
-                ),
-              ),
-              if (count > 0)
-                Container(
-                  margin: EdgeInsets.only(top: 5),
-                  padding: EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                  decoration: BoxDecoration(
-                    color: color,
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: Text(
-                    '$count',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildSectionHeader({required String title, required String subtitle}) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          title,
-          style: TextStyle(
-            fontSize: 22,
-            fontWeight: FontWeight.bold,
-            color: Color(0xFF2F62A7),
-          ),
-        ),
-        SizedBox(height: 5),
-        Text(
-          subtitle,
-          style: TextStyle(
-            color: Colors.grey,
-            fontSize: 14,
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildSuggestionCard(Map<String, dynamic> suggestion) {
-    return Card(
-      margin: EdgeInsets.only(bottom: 10),
-      elevation: 2,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: ListTile(
-        contentPadding: EdgeInsets.all(15),
-        leading: Container(
-          width: 60,
-          height: 60,
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(10),
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                Color(0xFF4AB4DE),
-                Color(0xFF3B8AC3),
-              ],
-            ),
-          ),
-          child: Icon(Icons.lightbulb_outline, color: Colors.white, size: 30),
-        ),
-        title: Text(
-          suggestion['destination'],
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            color: Color(0xFF2F62A7),
-          ),
-        ),
-        subtitle: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            SizedBox(height: 5),
-            Text(suggestion['reason']),
-            SizedBox(height: 5),
-            Row(
-              children: [
-                Icon(Icons.people, size: 14, color: Colors.grey),
-                SizedBox(width: 5),
-                Text('Crowd: ${suggestion['crowdLevel']}'),
-                SizedBox(width: 15),
-                Icon(Icons.calendar_today, size: 14, color: Colors.grey),
-                SizedBox(width: 5),
-                Text(suggestion['bestTime']),
-              ],
-            ),
-          ],
-        ),
-        trailing: Icon(Icons.chevron_right, color: Color(0xFF4AB4DE)),
-        onTap: () {
-          // Show suggestion details
-        },
-      ),
-    );
-  }
-
-  Widget _buildTripCard(Trip trip) {
-    return Card(
-      margin: EdgeInsets.only(bottom: 10),
-      elevation: 2,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: ListTile(
-        contentPadding: EdgeInsets.all(15),
-        leading: Container(
-          width: 50,
-          height: 50,
-          decoration: BoxDecoration(
-            color: Color(0xFF4AB4DE).withOpacity(0.1),
-            borderRadius: BorderRadius.circular(10),
-          ),
-          child: Icon(Icons.location_on, color: Color(0xFF4AB4DE)),
-        ),
-        title: Text(
-          trip.destination,
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            color: Color(0xFF2F62A7),
-          ),
-        ),
-        subtitle: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            SizedBox(height: 5),
-            Text(
-              '${trip.startDate.day}/${trip.startDate.month} - ${trip.endDate.day}/${trip.endDate.month}',
-              style: TextStyle(color: Colors.grey),
-            ),
-            SizedBox(height: 5),
-            Wrap(
-              spacing: 5,
-              children: trip.selectedMoods
-                  .take(2)
-                  .map((mood) => Chip(
-                label: Text(mood),
-                backgroundColor: Color(0xFF4AB4DE).withOpacity(0.1),
-                labelStyle: TextStyle(fontSize: 10),
-              ))
-                  .toList(),
-            ),
-          ],
-        ),
-        trailing: Icon(Icons.chevron_right, color: Color(0xFF4AB4DE)),
-        onTap: () {
-          // View trip details
-        },
-      ),
-    );
-  }
-
-  Widget _buildEmptyState({
-    required IconData icon,
-    required String title,
-    required String subtitle,
-  }) {
-    return Card(
-      elevation: 0,
-      color: Colors.grey[50],
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-        side: BorderSide(color: Colors.grey[200]!),
-      ),
-      child: Container(
-        padding: EdgeInsets.all(30),
-        child: Column(
-          children: [
-            Icon(icon, size: 50, color: Colors.grey[400]),
-            SizedBox(height: 15),
-            Text(
-              title,
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-                color: Colors.grey[600],
-              ),
-            ),
-            SizedBox(height: 5),
-            Text(
-              subtitle,
-              style: TextStyle(
-                color: Colors.grey[500],
-                fontSize: 12,
-              ),
-              textAlign: TextAlign.center,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildBottomNavigationBar() {
-    return Container(
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.only(
-          topLeft: Radius.circular(20),
-          topRight: Radius.circular(20),
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.1),
-            blurRadius: 20,
-            spreadRadius: 1,
-          ),
-        ],
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.only(
-          topLeft: Radius.circular(20),
-          topRight: Radius.circular(20),
-        ),
-        child: BottomNavigationBar(
-          items: <BottomNavigationBarItem>[
-            BottomNavigationBarItem(
-              icon: Icon(Icons.home),
-              label: 'Home',
-              backgroundColor: Colors.white,
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.search),
-              label: 'Explore',
-              backgroundColor: Colors.white,
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.bookmark),
-              label: 'Saved',
-              backgroundColor: Colors.white,
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.person),
-              label: 'Profile',
-              backgroundColor: Colors.white,
-            ),
-          ],
-          currentIndex: _selectedIndex,
-          selectedItemColor: Color(0xFF2F62A7),
-          unselectedItemColor: Colors.grey,
-          showUnselectedLabels: true,
-          type: BottomNavigationBarType.fixed,
-          onTap: _onItemTapped,
-          elevation: 10,
-        ),
-      ),
-    );
+  IconData _getMoodIcon(String mood) {
+    switch (mood.toLowerCase()) {
+      case 'romantic':
+        return Icons.favorite;
+      case 'adventure':
+        return Icons.terrain;
+      case 'nature':
+        return Icons.park;
+      case 'cultural':
+        return Icons.account_balance;
+      case 'relaxation':
+        return Icons.spa;
+      case 'shopping':
+        return Icons.shopping_bag;
+      case 'food exploration':
+        return Icons.restaurant;
+      case 'photography':
+        return Icons.camera_alt;
+      default:
+        return Icons.emoji_emotions;
+    }
   }
 }

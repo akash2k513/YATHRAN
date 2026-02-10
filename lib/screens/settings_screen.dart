@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:yathran/services/auth_service.dart';
 import 'package:yathran/services/notification_service.dart';
 
+
 class SettingsScreen extends StatefulWidget {
   @override
   _SettingsScreenState createState() => _SettingsScreenState();
