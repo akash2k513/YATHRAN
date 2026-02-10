@@ -8,6 +8,7 @@ class Trip {
   String tripType;
   List<String> selectedMoods;
   List<Traveler> travelers;
+  Map<String, dynamic>? destinationData; // NEW FIELD ADDED HERE
 
   Trip({
     required this.destination,
@@ -17,6 +18,7 @@ class Trip {
     required this.tripType,
     this.selectedMoods = const [],
     this.travelers = const [],
+    this.destinationData, // ADD THIS TO CONSTRUCTOR
   });
 }
 
