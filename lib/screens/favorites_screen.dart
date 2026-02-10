@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:yathran/services/notification_service.dart';
+import 'package:yathran/screens/trip_creation_screen.dart';
 
 class FavoritesScreen extends StatelessWidget {
   @override
@@ -8,19 +9,22 @@ class FavoritesScreen extends StatelessWidget {
     final List<Map<String, dynamic>> favoritePlaces = [
       {
         'name': 'Santorini, Greece',
-        'image': 'https://images.unsplash.com/photo-1570077188670-e3a8d69ac5ff?w=400&h=300&fit=crop',
+        'image':
+        'https://images.unsplash.com/photo-1570077188670-e3a8d69ac5ff?w=400&h=300&fit=crop',
         'crowdLevel': 'Medium',
         'priceRange': '2200 USD',
       },
       {
         'name': 'Kyoto, Japan',
-        'image': 'https://images.unsplash.com/photo-1493976040374-85c8e12f0c0e?w=400&h=300&fit=crop',
+        'image':
+        'https://images.unsplash.com/photo-1493976040374-85c8e12f0c0e?w=400&h=300&fit=crop',
         'crowdLevel': 'High',
         'priceRange': '2400 USD',
       },
       {
         'name': 'Swiss Alps',
-        'image': 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=400&h=300&fit=crop',
+        'image':
+        'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=400&h=300&fit=crop',
         'crowdLevel': 'Low',
         'priceRange': '3500 USD',
       },
@@ -103,7 +107,6 @@ class FavoritesScreen extends StatelessWidget {
                     ),
                     child: InkWell(
                       onTap: () {
-                        // Navigate to place details
                         NotificationService().sendNotification(
                           context: context,
                           title: 'Place Details',
@@ -132,10 +135,12 @@ class FavoritesScreen extends StatelessWidget {
                             child: Padding(
                               padding: EdgeInsets.all(15),
                               child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
+                                crossAxisAlignment:
+                                CrossAxisAlignment.start,
                                 children: [
                                   Row(
-                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
                                     children: [
                                       Expanded(
                                         child: Text(
@@ -146,17 +151,20 @@ class FavoritesScreen extends StatelessWidget {
                                             color: Color(0xFF2F62A7),
                                           ),
                                           maxLines: 1,
-                                          overflow: TextOverflow.ellipsis,
+                                          overflow:
+                                          TextOverflow.ellipsis,
                                         ),
                                       ),
                                       IconButton(
-                                        icon: Icon(Icons.favorite, color: Colors.red),
+                                        icon: Icon(Icons.favorite,
+                                            color: Colors.red),
                                         onPressed: () {
-                                          // Remove from favorites
-                                          NotificationService().sendNotification(
+                                          NotificationService()
+                                              .sendNotification(
                                             context: context,
                                             title: 'Removed',
-                                            message: '${place['name']} removed from favorites',
+                                            message:
+                                            '${place['name']} removed from favorites',
                                             type: 'warning',
                                           );
                                         },
@@ -167,50 +175,80 @@ class FavoritesScreen extends StatelessWidget {
                                   Row(
                                     children: [
                                       Container(
-                                        padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                        padding: EdgeInsets.symmetric(
+                                            horizontal: 8, vertical: 4),
                                         decoration: BoxDecoration(
-                                          color: _getCrowdColor(place['crowdLevel']).withOpacity(0.1),
-                                          borderRadius: BorderRadius.circular(6),
+                                          color: _getCrowdColor(
+                                              place['crowdLevel'])
+                                              .withOpacity(0.1),
+                                          borderRadius:
+                                          BorderRadius.circular(6),
                                         ),
                                         child: Row(
                                           mainAxisSize: MainAxisSize.min,
                                           children: [
-                                            Icon(Icons.people, size: 12, color: _getCrowdColor(place['crowdLevel'])),
+                                            Icon(
+                                              Icons.people,
+                                              size: 12,
+                                              color: _getCrowdColor(
+                                                  place['crowdLevel']),
+                                            ),
                                             SizedBox(width: 4),
                                             Text(
                                               place['crowdLevel'],
                                               style: TextStyle(
                                                 fontSize: 12,
-                                                color: _getCrowdColor(place['crowdLevel']),
-                                                fontWeight: FontWeight.bold,
+                                                color: _getCrowdColor(
+                                                    place['crowdLevel']),
+                                                fontWeight:
+                                                FontWeight.bold,
                                               ),
                                             ),
                                           ],
                                         ),
                                       ),
                                       SizedBox(width: 10),
-                                      Icon(Icons.attach_money, size: 12, color: Colors.grey),
+                                      Icon(Icons.attach_money,
+                                          size: 12,
+                                          color: Colors.grey),
                                       SizedBox(width: 4),
                                       Text(
                                         place['priceRange'],
-                                        style: TextStyle(fontSize: 12, color: Colors.grey),
+                                        style: TextStyle(
+                                            fontSize: 12,
+                                            color: Colors.grey),
                                       ),
                                     ],
                                   ),
                                   SizedBox(height: 10),
+
+                                  // ✅ FINAL UPDATED BUTTON
                                   ElevatedButton(
                                     onPressed: () {
-                                      // Plan trip to this place
-                                      NotificationService().sendNotification(
+                                      NotificationService()
+                                          .sendNotification(
                                         context: context,
                                         title: 'Trip Planning',
-                                        message: 'Start planning trip to ${place['name']}',
+                                        message:
+                                        'Start planning trip to ${place['name']}',
                                         type: 'success',
+                                      );
+
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (context) =>
+                                              TripCreationScreen(
+                                                destination: place['name'], // 👈 AUTO-FILL
+                                              ),
+                                        ),
                                       );
                                     },
                                     style: ElevatedButton.styleFrom(
-                                      backgroundColor: Color(0xFF4AB4DE),
-                                      minimumSize: Size(double.infinity, 40),
+                                      backgroundColor:
+                                      Color(0xFF4AB4DE),
+                                      minimumSize:
+                                      Size(double.infinity, 40),
                                     ),
                                     child: Text('Plan Trip Here'),
                                   ),

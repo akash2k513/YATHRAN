@@ -3,6 +3,11 @@ import 'package:yathran/screens/mood_selection_screen.dart';
 import 'package:yathran/models/trip_model.dart';
 
 class TripCreationScreen extends StatefulWidget {
+  // ✅ CHANGE 1: Add optional destination parameter
+  final String? destination;
+
+  TripCreationScreen({this.destination});
+
   @override
   _TripCreationScreenState createState() => _TripCreationScreenState();
 }
@@ -14,6 +19,15 @@ class _TripCreationScreenState extends State<TripCreationScreen> {
   double _budget = 1000;
   String _tripType = 'Solo';
   final List<String> _tripTypes = ['Solo', 'Family', 'Friends', 'Couple'];
+
+  // ✅ CHANGE 2: Auto-fill destination if received
+  @override
+  void initState() {
+    super.initState();
+    if (widget.destination != null && widget.destination!.isNotEmpty) {
+      _destinationController.text = widget.destination!;
+    }
+  }
 
   Future<void> _selectDate(BuildContext context, bool isStart) async {
     final DateTime? picked = await showDatePicker(
@@ -116,10 +130,8 @@ class _TripCreationScreenState extends State<TripCreationScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
-                            'Start Date',
-                            style: TextStyle(color: Colors.grey),
-                          ),
+                          Text('Start Date',
+                              style: TextStyle(color: Colors.grey)),
                           SizedBox(height: 5),
                           Text(
                             _startDate != null
@@ -145,10 +157,8 @@ class _TripCreationScreenState extends State<TripCreationScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
-                            'End Date',
-                            style: TextStyle(color: Colors.grey),
-                          ),
+                          Text('End Date',
+                              style: TextStyle(color: Colors.grey)),
                           SizedBox(height: 5),
                           Text(
                             _endDate != null
@@ -177,7 +187,8 @@ class _TripCreationScreenState extends State<TripCreationScreen> {
                 children: [
                   Text(
                     'Budget: \$${_budget.toInt()}',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                    style:
+                    TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                   ),
                   SizedBox(height: 10),
                   Slider(
@@ -222,7 +233,8 @@ class _TripCreationScreenState extends State<TripCreationScreen> {
                   selectedColor: Color(0xFF4AB4DE),
                   backgroundColor: Colors.grey[200],
                   labelStyle: TextStyle(
-                    color: _tripType == type ? Colors.white : Colors.black,
+                    color:
+                    _tripType == type ? Colors.white : Colors.black,
                   ),
                 );
               }).toList(),
@@ -239,9 +251,8 @@ class _TripCreationScreenState extends State<TripCreationScreen> {
                   'Continue to Mood Selection',
                   style: TextStyle(fontSize: 18),
                 ),
-                // Line 243 - Update this:
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Color(0xFF2F62A7), // Changed from primary
+                  backgroundColor: Color(0xFF2F62A7),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(10),
                   ),
