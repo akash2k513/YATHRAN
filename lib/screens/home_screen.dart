@@ -1,29 +1,38 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'dart:ui'; // Required for ImageFilter (Glassmorphism)
+import 'package:smooth_page_indicator/smooth_page_indicator.dart';
+import 'package:provider/provider.dart';
+
+// --- Placeholder Imports (Replace with your actual files) ---
 import 'package:yathran/screens/trip_creation_screen.dart';
 import 'package:yathran/screens/profile_screen.dart';
 import 'package:yathran/screens/trending_destinations_screen.dart';
 import 'package:yathran/screens/crowd_insights_screen.dart';
 import 'package:yathran/screens/map_screen.dart';
 import 'package:yathran/screens/settings_screen.dart';
-import 'package:yathran/models/trip_model.dart';
-import 'package:provider/provider.dart';
+import 'package:yathran/screens/favorites_screen.dart';
+import 'package:yathran/screens/ai_companion_screen.dart';
 import 'package:yathran/services/auth_service.dart';
 import 'package:yathran/services/notification_service.dart';
-import 'package:smooth_page_indicator/smooth_page_indicator.dart';
+// ---------------------------------------------------------
 
 class HomeScreen extends StatefulWidget {
   @override
   _HomeScreenState createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateMixin {
+class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
+  // Navigation State
   int _selectedIndex = 0;
-  late AnimationController _animationController;
+
+  // Animation Controllers
+  late AnimationController _fadeController;
   late Animation<double> _fadeAnimation;
   final PageController _carouselController = PageController(viewportFraction: 0.85);
   int _currentCarouselIndex = 0;
 
-  // Top Places Carousel Data
+  // --- MOCK DATA ---
   final List<Map<String, dynamic>> topPlaces = [
     {
       'id': '1',
@@ -31,9 +40,9 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
       'image': 'https://images.unsplash.com/photo-1570077188670-e3a8d69ac5ff?w=800&h=400&fit=crop',
       'description': 'White-washed buildings with stunning sunset views',
       'crowdLevel': 'Medium',
-      'bestTime': 'May - October',
+      'bestTime': 'May - Oct',
       'moods': ['Romantic', 'Photography', 'Relaxation'],
-      'priceRange': '2200 USD',
+      'priceRange': '\$2,200',
     },
     {
       'id': '2',
@@ -41,9 +50,9 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
       'image': 'https://images.unsplash.com/photo-1493976040374-85c8e12f0c0e?w=800&h=400&fit=crop',
       'description': 'Ancient temples and traditional culture',
       'crowdLevel': 'High',
-      'bestTime': 'Spring & Autumn',
-      'moods': ['Cultural', 'Spiritual', 'Food Exploration'],
-      'priceRange': '2400 USD',
+      'bestTime': 'Spring/Fall',
+      'moods': ['Cultural', 'Spiritual', 'Food'],
+      'priceRange': '\$2,400',
     },
     {
       'id': '3',
@@ -51,9 +60,9 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
       'image': 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&h=400&fit=crop',
       'description': 'Majestic mountains and adventure sports',
       'crowdLevel': 'Low',
-      'bestTime': 'June - September',
+      'bestTime': 'Jun - Sep',
       'moods': ['Adventure', 'Nature', 'Family'],
-      'priceRange': '3500 USD',
+      'priceRange': '\$3,500',
     },
     {
       'id': '4',
@@ -61,451 +70,537 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
       'image': 'https://images.unsplash.com/photo-1537953773345-d172ccf13cf1?w=800&h=400&fit=crop',
       'description': 'Tropical paradise with spiritual retreats',
       'crowdLevel': 'Medium',
-      'bestTime': 'April - October',
-      'moods': ['Adventure', 'Relaxation', 'Spiritual'],
-      'priceRange': '1000 USD',
-    },
-    {
-      'id': '5',
-      'name': 'Dubai, UAE',
-      'image': 'https://images.unsplash.com/photo-1512453979798-5ea266f8880c?w=800&h=400&fit=crop',
-      'description': 'Modern architecture and luxury experiences',
-      'crowdLevel': 'High',
-      'bestTime': 'November - March',
-      'moods': ['Shopping', 'Luxury', 'Adventure'],
-      'priceRange': '10000 USD',
+      'bestTime': 'Apr - Oct',
+      'moods': ['Adventure', 'Relax', 'Spiritual'],
+      'priceRange': '\$1,000',
     },
   ];
 
-  // AI Travel Suggestions based on user history
   List<Map<String, dynamic>> aiSuggestions = [
     {
       'destination': 'Bali, Indonesia',
-      'reason': 'Perfect for Adventure & Nature lovers',
-      'moods': ['Adventure', 'Nature', 'Relaxation'],
+      'reason': 'Perfect for your Adventure & Nature interests',
+      'moods': ['Adventure', 'Nature'],
       'crowdLevel': 'Medium',
-      'bestTime': 'April - October',
+      'bestTime': 'Apr - Oct',
     },
     {
       'destination': 'Kyoto, Japan',
-      'reason': 'Best for Cultural & Food Experience',
-      'moods': ['Cultural', 'Food Exploration', 'Photography'],
+      'reason': 'High match for Cultural experiences',
+      'moods': ['Cultural', 'Food'],
       'crowdLevel': 'High',
-      'bestTime': 'Spring & Autumn',
+      'bestTime': 'Mar - May',
+    },
+  ];
+
+  final List<Map<String, dynamic>> travelStories = [
+    {
+      'title': 'Hidden Gems of Bali',
+      'author': 'Sarah Miller',
+      'readTime': '5 min',
+      'likes': 245,
+      'image': 'https://images.unsplash.com/photo-1537953773345-d172ccf13cf1?w=400&h=300&fit=crop',
+      'category': 'Adventure',
+      'excerpt': 'Discover secret waterfalls and local warungs...',
     },
     {
-      'destination': 'Swiss Alps',
-      'reason': 'Ideal for Nature & Adventure',
-      'moods': ['Nature', 'Adventure', 'Family'],
-      'crowdLevel': 'Low',
-      'bestTime': 'June - September',
+      'title': 'Tokyo on a Budget',
+      'author': 'David Chen',
+      'readTime': '7 min',
+      'likes': 189,
+      'image': 'https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?w=400&h=300&fit=crop',
+      'category': 'Budget',
+      'excerpt': 'Experience authentic Japan without breaking the bank...',
     },
   ];
 
   @override
   void initState() {
     super.initState();
-    _animationController = AnimationController(
-      duration: Duration(milliseconds: 500),
+    // System UI cleanup
+    SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(
+      statusBarColor: Colors.transparent,
+      statusBarIconBrightness: Brightness.light,
+    ));
+
+    // Animation setup
+    _fadeController = AnimationController(
+      duration: Duration(milliseconds: 800),
       vsync: this,
     );
     _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _animationController, curve: Curves.easeIn),
+      CurvedAnimation(parent: _fadeController, curve: Curves.easeOutQuart),
     );
-    _animationController.forward();
+    _fadeController.forward();
 
-    // Auto-rotate carousel
+    // Start auto-scroll
     _startCarouselAutoRotation();
   }
 
   void _startCarouselAutoRotation() {
-    Future.delayed(Duration(seconds: 5), () {
+    Future.delayed(Duration(seconds: 6), () {
       if (_carouselController.hasClients && mounted) {
         int nextPage = _currentCarouselIndex + 1;
         if (nextPage >= topPlaces.length) nextPage = 0;
         _carouselController.animateToPage(
           nextPage,
-          duration: Duration(milliseconds: 500),
-          curve: Curves.easeInOut,
+          duration: Duration(milliseconds: 900),
+          curve: Curves.fastLinearToSlowEaseIn,
         );
         _startCarouselAutoRotation();
       }
     });
   }
 
-  void _logout() async {
-    final authService = Provider.of<AuthService>(context, listen: false);
-    await authService.logout();
-    Navigator.pushReplacementNamed(context, '/auth');
-  }
-
-  void _showProfile() {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => ProfileScreen(),
-      ),
-    );
-  }
-
-  void _showSettings() {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => SettingsScreen(),
-      ),
-    );
-  }
-
-  void _viewTrendingDestinations() {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => TrendingDestinationsScreen(),
-      ),
-    );
-  }
-
-  void _viewCrowdInsights() {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => CrowdInsightsScreen(),
-      ),
-    );
-  }
-
   void _onItemTapped(int index) {
-    setState(() {
-      _selectedIndex = index;
-    });
-
-    switch (index) {
-      case 0:
-      // Home - already here
-        break;
-      case 1:
-      // Explore - show map
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => MapScreen(
-              showCrowdHeatmap: true,
-            ),
-          ),
-        );
-        break;
-      case 2:
-      // AI Companion
-        Navigator.pushNamed(context, '/ai-companion');
-        break;
-      case 3:
-      // Settings
-        _showSettings();
-        break;
-    }
+    if (_selectedIndex == index) return;
+    setState(() => _selectedIndex = index);
   }
 
   Color _getCrowdColor(String crowdLevel) {
     switch (crowdLevel.toLowerCase()) {
-      case 'low':
-        return Colors.green;
-      case 'medium':
-        return Colors.orange;
-      case 'high':
-        return Colors.red;
-      default:
-        return Colors.grey;
+      case 'low': return Color(0xFF66BB6A); // Green
+      case 'medium': return Color(0xFFFFA726); // Orange
+      case 'high': return Color(0xFFEF5350); // Red
+      default: return Colors.grey;
+    }
+  }
+
+  // --- Page Switcher Logic ---
+  Widget _getPage(int index) {
+    switch (index) {
+      case 0: return _buildHomeContent();
+      case 1: return MapScreen(showCrowdHeatmap: true);
+      case 2: return FavoritesScreen();
+      case 3: return AICompanionScreen();
+      case 4: return SettingsScreen();
+      default: return _buildHomeContent();
     }
   }
 
   @override
   void dispose() {
-    _animationController.dispose();
+    _fadeController.dispose();
     _carouselController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    final authService = Provider.of<AuthService>(context);
-
+    // extendBody allows content to flow behind the floating navbar
     return Scaffold(
-      backgroundColor: Color(0xFFEEDBCC),
-      body: FadeTransition(
-        opacity: _fadeAnimation,
-        child: CustomScrollView(
-          slivers: [
-            // App Bar with user info
-            SliverAppBar(
-              expandedHeight: 150.0,
-              floating: false,
-              pinned: true,
-              backgroundColor: Color(0xFF2F62A7),
-              flexibleSpace: FlexibleSpaceBar(
-                title: Text(
-                  'YĀTHRAN',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    shadows: [
-                      Shadow(
-                        blurRadius: 4,
-                        color: Colors.black.withOpacity(0.3),
-                        offset: Offset(1, 1),
-                      ),
-                    ],
-                  ),
-                ),
-                background: Container(
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: [
-                        Color(0xFF2F62A7),
-                        Color(0xFF3B8AC3),
-                        Color(0xFF4AB4DE),
-                      ],
-                    ),
-                  ),
-                  child: Padding(
-                    padding: EdgeInsets.only(top: 100, left: 20),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Welcome, ${authService.currentUser?.name ?? 'Traveler'}!',
-                          style: TextStyle(
-                            fontSize: 24,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
-                          ),
-                        ),
-                        SizedBox(height: 5),
-                        Text(
-                          'Ready for your next adventure?',
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: Colors.white70,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-              actions: [
-                IconButton(
-                  icon: Icon(Icons.notifications, color: Colors.white),
-                  onPressed: () {
-                    NotificationService().sendNotification(
-                      context: context,
-                      title: 'Smart Alert',
-                      message: 'No new notifications. All systems operational.',
-                      type: 'info',
-                    );
-                  },
-                ),
-              ],
+      backgroundColor: Color(0xFFF8F9FA), // Very light grey-white for modern feel
+      extendBody: true,
+      body: AnimatedSwitcher(
+        duration: Duration(milliseconds: 500),
+        switchInCurve: Curves.easeOutCubic,
+        switchOutCurve: Curves.easeInCubic,
+        transitionBuilder: (Widget child, Animation<double> animation) {
+          // Subtle zoom-fade transition
+          return FadeTransition(
+            opacity: animation,
+            child: ScaleTransition(
+              scale: Tween<double>(begin: 0.98, end: 1.0).animate(animation),
+              child: child,
             ),
-
-            // Main Content
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Top Places Carousel
-                    _buildTopPlacesCarousel(),
-                    SizedBox(height: 30),
-
-                    // Quick Features Grid - Improved UI
-                    Text(
-                      'Quick Actions',
-                      style: TextStyle(
-                        fontSize: 22,
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFF2F62A7),
-                      ),
-                    ),
-                    SizedBox(height: 10),
-                    Text(
-                      'Everything you need for smart travel planning',
-                      style: TextStyle(
-                        color: Colors.grey,
-                        fontSize: 14,
-                      ),
-                    ),
-                    SizedBox(height: 15),
-                    GridView.count(
-                      shrinkWrap: true,
-                      physics: NeverScrollableScrollPhysics(),
-                      crossAxisCount: 2,
-                      childAspectRatio: 1.4,
-                      crossAxisSpacing: 15,
-                      mainAxisSpacing: 15,
-                      children: [
-                        _buildQuickAction(
-                          title: 'Plan New Trip',
-                          icon: Icons.add_location_alt,
-                          color: Color(0xFF2F62A7),
-                          gradientColors: [
-                            Color(0xFF2F62A7),
-                            Color(0xFF3B8AC3),
-                          ],
-                          onTap: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => TripCreationScreen(),
-                              ),
-                            );
-                          },
-                        ),
-                        _buildQuickAction(
-                          title: 'Live Map',
-                          icon: Icons.map,
-                          color: Color(0xFF4AB4DE),
-                          gradientColors: [
-                            Color(0xFF4AB4DE),
-                            Color(0xFF3B8AC3),
-                          ],
-                          onTap: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => MapScreen(
-                                  showCrowdHeatmap: true,
-                                ),
-                              ),
-                            );
-                          },
-                        ),
-                        _buildQuickAction(
-                          title: 'Trending',
-                          icon: Icons.trending_up,
-                          color: Color(0xFF4AB4DE),
-                          gradientColors: [
-                            Color(0xFF4AB4DE),
-                            Color(0xFF3B8AC3),
-                          ],
-                          onTap: _viewTrendingDestinations,
-                        ),
-                        _buildQuickAction(
-                          title: 'Crowd Insights',
-                          icon: Icons.insights,
-                          color: Color(0xFF2F62A7),
-                          gradientColors: [
-                            Color(0xFF2F62A7),
-                            Color(0xFF3B8AC3),
-                          ],
-                          onTap: _viewCrowdInsights,
-                        ),
-                      ],
-                    ),
-                    SizedBox(height: 30),
-
-                    // AI Travel Suggestions
-                    _buildSectionHeader(
-                      title: 'AI Travel Suggestions',
-                      subtitle: 'Personalized based on your interests',
-                    ),
-                    SizedBox(height: 10),
-                    ...aiSuggestions.map((suggestion) => _buildSuggestionCard(suggestion)).toList(),
-                    SizedBox(height: 20),
-
-                    // Popular Categories
-                    _buildSectionHeader(
-                      title: 'Popular Categories',
-                      subtitle: 'Browse by travel interests',
-                    ),
-                    SizedBox(height: 10),
-                    _buildCategoryGrid(),
-                  ],
-                ),
-              ),
-            ),
-          ],
+          );
+        },
+        child: KeyedSubtree(
+          key: ValueKey<int>(_selectedIndex),
+          child: _getPage(_selectedIndex),
         ),
       ),
-      bottomNavigationBar: _buildBottomNavigationBar(),
+      bottomNavigationBar: _buildDynamicFloatingNavBar(),
     );
   }
 
-  Widget _buildTopPlacesCarousel() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(
-              'Top Places to Visit Now',
-              style: TextStyle(
-                fontSize: 22,
-                fontWeight: FontWeight.bold,
-                color: Color(0xFF2F62A7),
-              ),
+  // ---------------------------------------------------------------------------
+  // UI COMPONENTS
+  // ---------------------------------------------------------------------------
+
+  // 1. Floating Navigation Bar
+  Widget _buildDynamicFloatingNavBar() {
+    return Container(
+      padding: EdgeInsets.only(bottom: 20, left: 20, right: 20),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(24),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+          child: Container(
+            height: 70,
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.85),
+              borderRadius: BorderRadius.circular(24),
+              border: Border.all(color: Colors.white.withOpacity(0.6), width: 1),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.1),
+                  blurRadius: 25,
+                  spreadRadius: 0,
+                  offset: Offset(0, 10),
+                ),
+              ],
             ),
-            Container(
-              padding: EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-              decoration: BoxDecoration(
-                color: Color(0xFF4AB4DE).withOpacity(0.1),
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: Color(0xFF4AB4DE)),
-              ),
-              child: Text(
-                '${_currentCarouselIndex + 1}/${topPlaces.length}',
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                _buildNavItem(0, Icons.home_rounded, Icons.home_outlined, 'Home'),
+                _buildNavItem(1, Icons.explore_rounded, Icons.explore_outlined, 'Explore'),
+                _buildNavItem(2, Icons.favorite_rounded, Icons.favorite_border_rounded, 'Saved'),
+                _buildNavItem(3, Icons.smart_toy_rounded, Icons.smart_toy_outlined, 'AI'),
+                _buildNavItem(4, Icons.settings_rounded, Icons.settings_outlined, 'Config'),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildNavItem(int index, IconData selectedIcon, IconData unselectedIcon, String label) {
+    bool isSelected = _selectedIndex == index;
+    return GestureDetector(
+      onTap: () => _onItemTapped(index),
+      behavior: HitTestBehavior.opaque,
+      child: AnimatedContainer(
+        duration: Duration(milliseconds: 300),
+        curve: Curves.easeOutBack,
+        padding: EdgeInsets.symmetric(horizontal: isSelected ? 16 : 8, vertical: 8),
+        decoration: BoxDecoration(
+          color: isSelected ? Color(0xFF2F62A7).withOpacity(0.1) : Colors.transparent,
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              isSelected ? selectedIcon : unselectedIcon,
+              color: isSelected ? Color(0xFF2F62A7) : Colors.grey[500],
+              size: 24,
+            ),
+            if (isSelected) ...[
+              SizedBox(width: 8),
+              Text(
+                label,
                 style: TextStyle(
-                  color: Color(0xFF4AB4DE),
-                  fontWeight: FontWeight.bold,
-                  fontSize: 12,
+                  color: Color(0xFF2F62A7),
+                  fontWeight: FontWeight.w700,
+                  fontSize: 13,
                 ),
               ),
-            ),
+            ],
           ],
         ),
-        SizedBox(height: 10),
-        Text(
-          'AI-curated destinations based on current season and crowd levels',
-          style: TextStyle(
-            color: Colors.grey,
-            fontSize: 14,
+      ),
+    );
+  }
+
+  // 2. Main Home Content
+  Widget _buildHomeContent() {
+    final authService = Provider.of<AuthService>(context);
+
+    return FadeTransition(
+      opacity: _fadeAnimation,
+      child: CustomScrollView(
+        physics: BouncingScrollPhysics(),
+        slivers: [
+          // Advanced Sliver App Bar
+          SliverAppBar(
+            expandedHeight: 220.0,
+            floating: false,
+            pinned: true,
+            elevation: 0,
+            backgroundColor: Color(0xFF2F62A7),
+            flexibleSpace: FlexibleSpaceBar(
+              collapseMode: CollapseMode.parallax,
+              background: Stack(
+                fit: StackFit.expand,
+                children: [
+                  // Gradient Background
+                  Container(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [
+                          Color(0xFF154486),
+                          Color(0xFF2F62A7),
+                          Color(0xFF5AB6DF),
+                        ],
+                      ),
+                    ),
+                  ),
+                  // Decorative Circles
+                  Positioned(
+                    top: -50, right: -50,
+                    child: CircleAvatar(radius: 100, backgroundColor: Colors.white.withOpacity(0.05)),
+                  ),
+                  Positioned(
+                    bottom: -30, left: -30,
+                    child: CircleAvatar(radius: 80, backgroundColor: Colors.white.withOpacity(0.05)),
+                  ),
+                  // Text Content
+                  Positioned(
+                    bottom: 30, left: 24, right: 24,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              'YĀTHRAN',
+                              style: TextStyle(
+                                fontSize: 28,
+                                fontWeight: FontWeight.w900,
+                                color: Colors.white,
+                                letterSpacing: 3.0,
+                              ),
+                            ),
+                            Container(
+                              padding: EdgeInsets.all(2),
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                border: Border.all(color: Colors.white.withOpacity(0.5)),
+                              ),
+                              child: CircleAvatar(
+                                radius: 18,
+                                backgroundColor: Colors.white.withOpacity(0.2),
+                                child: Icon(Icons.person, color: Colors.white, size: 20),
+                              ),
+                            )
+                          ],
+                        ),
+                        SizedBox(height: 8),
+                        Text(
+                          'Hello, ${authService.currentUser?.name ?? 'Traveler'}',
+                          style: TextStyle(fontSize: 18, color: Colors.white.withOpacity(0.9)),
+                        ),
+                        Text(
+                          'Where do you want to go?',
+                          style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.white),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            actions: [
+              IconButton(
+                icon: Icon(Icons.notifications_outlined, color: Colors.white),
+                onPressed: () => NotificationService().sendNotification(
+                  context: context,
+                  title: 'System',
+                  message: 'No new alerts.',
+                  type: 'info',
+                ),
+              ),
+            ],
+          ),
+
+          // Content Body
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: EdgeInsets.only(bottom: 120), // Padding for Floating Navbar
+              child: Column(
+                children: [
+                  SizedBox(height: 24),
+                  _buildTopPlacesCarousel(),
+                  SizedBox(height: 32),
+
+                  // Quick Actions Grid (Robust Layout)
+                  Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 20),
+                    child: Column(
+                      children: [
+                        _buildSectionHeader('Quick Actions', 'Smart tools'),
+                        SizedBox(height: 16),
+                        _buildResponsiveQuickActionsGrid(),
+                      ],
+                    ),
+                  ),
+
+                  SizedBox(height: 32),
+
+                  // AI Suggestions
+                  Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 20),
+                    child: Column(
+                      children: [
+                        _buildSectionHeader('AI Suggestions', 'Curated for you'),
+                        SizedBox(height: 16),
+                        ...aiSuggestions.map((s) => _buildSuggestionCard(s)).toList(),
+                      ],
+                    ),
+                  ),
+
+                  SizedBox(height: 32),
+
+                  // Travel Stories
+                  Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 20),
+                    child: Column(
+                      children: [
+                        _buildSectionHeader('Travel Stories', 'Inspiration'),
+                        SizedBox(height: 16),
+                        _buildTravelStories(),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ---------------------------------------------------------------------------
+  // WIDGET BUILDERS
+  // ---------------------------------------------------------------------------
+
+  Widget _buildSectionHeader(String title, String subtitle) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(title, style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF1A3E6D))),
+            Text(subtitle, style: TextStyle(fontSize: 13, color: Colors.grey[600], fontWeight: FontWeight.w500)),
+          ],
+        ),
+        Icon(Icons.more_horiz, color: Colors.grey[400]),
+      ],
+    );
+  }
+
+  // --- 3. Robust Grid with LayoutBuilder ---
+  Widget _buildResponsiveQuickActionsGrid() {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        // Calculate item width based on available width
+        final double itemWidth = (constraints.maxWidth - 16) / 2;
+        // Define a fixed height you want for your buttons
+        final double itemHeight = 90.0;
+        // Calculate exact ratio
+        final double ratio = itemWidth / itemHeight;
+
+        return GridView.count(
+          shrinkWrap: true,
+          physics: NeverScrollableScrollPhysics(),
+          crossAxisCount: 2,
+          childAspectRatio: ratio, // Dynamic ratio prevents overflow
+          crossAxisSpacing: 16,
+          mainAxisSpacing: 16,
+          children: [
+            _buildQuickActionBtn(
+                'New Trip', Icons.add_location_alt_outlined,
+                [Color(0xFF2F62A7), Color(0xFF4C8DCE)],
+                    () => Navigator.push(context, MaterialPageRoute(builder: (_) => TripCreationScreen()))
+            ),
+            _buildQuickActionBtn(
+                'Live Map', Icons.map_outlined,
+                [Color(0xFF4AB4DE), Color(0xFF6AC9EF)],
+                    () => _onItemTapped(1)
+            ),
+            _buildQuickActionBtn(
+                'Trending', Icons.trending_up,
+                [Color(0xFFFFA726), Color(0xFFFFCC80)],
+                    () => Navigator.push(context, MaterialPageRoute(builder: (_) => TrendingDestinationsScreen()))
+            ),
+            _buildQuickActionBtn(
+                'Insights', Icons.insights,
+                [Color(0xFF7E57C2), Color(0xFF9575CD)],
+                    () => Navigator.push(context, MaterialPageRoute(builder: (_) => CrowdInsightsScreen()))
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  // --- FIX APPLIED HERE: ADJUSTED PADDING/SPACING FOR TRENDING TEXT ---
+  Widget _buildQuickActionBtn(String title, IconData icon, List<Color> colors, VoidCallback onTap) {
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(color: colors[0].withOpacity(0.3), blurRadius: 10, offset: Offset(0, 5)),
+        ],
+        gradient: LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: colors),
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(20),
+          child: Padding(
+            // UPDATED: Reduced Horizontal Padding to 12
+            padding: EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+            child: Row(
+              children: [
+                Container(
+                  // UPDATED: Reduced Icon Container Padding to 6
+                  padding: EdgeInsets.all(6),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Icon(icon, color: Colors.white, size: 22),
+                ),
+                // UPDATED: Reduced Spacing width to 8
+                SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    title,
+                    style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15),
+                    maxLines: 1,
+                    overflow: TextOverflow.fade, // Handle text gently if it still touches edges
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
-        SizedBox(height: 20),
-        // FIXED: Added height constraint to prevent overflow
-        ConstrainedBox(
-          constraints: BoxConstraints(
-            maxHeight: 300, // Increased to accommodate all content
+      ),
+    );
+  }
+
+  // --- 4. Carousel ---
+  Widget _buildTopPlacesCarousel() {
+    return Column(
+      children: [
+        Padding(
+          padding: EdgeInsets.symmetric(horizontal: 24),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text('Top Picks', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.grey[800])),
+              SmoothPageIndicator(
+                controller: _carouselController,
+                count: topPlaces.length,
+                effect: ExpandingDotsEffect(
+                    dotHeight: 6, dotWidth: 6,
+                    activeDotColor: Color(0xFF2F62A7),
+                    dotColor: Colors.grey[300]!
+                ),
+              ),
+            ],
           ),
+        ),
+        SizedBox(height: 16),
+        SizedBox(
+          height: 300,
           child: PageView.builder(
             controller: _carouselController,
             itemCount: topPlaces.length,
-            onPageChanged: (index) {
-              setState(() => _currentCarouselIndex = index);
-            },
+            onPageChanged: (index) => setState(() => _currentCarouselIndex = index),
             itemBuilder: (context, index) {
-              final place = topPlaces[index];
-              return _buildCarouselItem(place, index);
+              return _buildCarouselItem(topPlaces[index], index);
             },
-          ),
-        ),
-        SizedBox(height: 15),
-        Center(
-          child: SmoothPageIndicator(
-            controller: _carouselController,
-            count: topPlaces.length,
-            effect: ExpandingDotsEffect(
-              activeDotColor: Color(0xFF2F62A7),
-              dotColor: Colors.grey[300]!,
-              dotHeight: 8,
-              dotWidth: 8,
-              spacing: 8,
-              expansionFactor: 3,
-            ),
           ),
         ),
       ],
@@ -514,893 +609,305 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
 
   Widget _buildCarouselItem(Map<String, dynamic> place, int index) {
     bool isActive = index == _currentCarouselIndex;
-
     return AnimatedContainer(
       duration: Duration(milliseconds: 300),
-      margin: EdgeInsets.symmetric(horizontal: 8),
+      curve: Curves.easeOut,
+      margin: EdgeInsets.symmetric(horizontal: 8, vertical: isActive ? 0 : 16),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(isActive ? 0.2 : 0.1),
+            color: Color(0xFF2F62A7).withOpacity(isActive ? 0.25 : 0.05),
             blurRadius: isActive ? 20 : 10,
-            spreadRadius: isActive ? 2 : 1,
-            offset: Offset(0, isActive ? 5 : 2),
+            offset: Offset(0, 10),
           ),
         ],
       ),
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(20),
-        child: Container(
-          height: 280, // Fixed height to prevent overflow
-          child: Stack(
-            children: [
-              // Background Image
-              Container(
-                width: double.infinity,
-                decoration: BoxDecoration(
-                  image: DecorationImage(
-                    image: NetworkImage(place['image']),
-                    fit: BoxFit.cover,
-                  ),
-                ),
-              ),
-
-              // Gradient Overlay
-              Container(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.bottomCenter,
-                    end: Alignment.topCenter,
-                    colors: [
-                      Colors.black.withOpacity(0.8),
-                      Colors.transparent,
-                      Colors.transparent,
-                      Colors.black.withOpacity(0.2),
-                    ],
-                  ),
-                ),
-              ),
-
-              // Content - Added constraints to prevent text overflow
-              Padding(
-                padding: EdgeInsets.all(15),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    // Crowd Level Badge
-                    Container(
-                      padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                      decoration: BoxDecoration(
-                        color: _getCrowdColor(place['crowdLevel']).withOpacity(0.9),
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(Icons.people, size: 14, color: Colors.white),
-                          SizedBox(width: 5),
-                          Text(
-                            place['crowdLevel'],
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 12,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    SizedBox(height: 8),
-
-                    // Place Name
-                    Text(
-                      place['name'],
-                      style: TextStyle(
-                        fontSize: 20, // Reduced font size
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                        shadows: [
-                          Shadow(
-                            blurRadius: 10,
-                            color: Colors.black.withOpacity(0.5),
-                          ),
-                        ],
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    SizedBox(height: 4),
-
-                    // Description
-                    Text(
-                      place['description'],
-                      style: TextStyle(
-                        fontSize: 13, // Reduced font size
-                        color: Colors.white.withOpacity(0.9),
-                        shadows: [
-                          Shadow(
-                            blurRadius: 5,
-                            color: Colors.black.withOpacity(0.5),
-                          ),
-                        ],
-                      ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    SizedBox(height: 8),
-
-                    // Details Row
-                    Row(
-                      children: [
-                        Icon(Icons.calendar_today, size: 12, color: Colors.white70),
-                        SizedBox(width: 4),
-                        Expanded(
-                          child: Text(
-                            place['bestTime'],
-                            style: TextStyle(color: Colors.white70, fontSize: 11),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                        SizedBox(width: 15),
-                        Icon(Icons.attach_money, size: 12, color: Colors.white70),
-                        SizedBox(width: 4),
-                        Text(
-                          place['priceRange'],
-                          style: TextStyle(color: Colors.white70, fontSize: 11),
-                        ),
-                      ],
-                    ),
-                    SizedBox(height: 8),
-
-                    // Mood Tags - Limited to 2 lines
-                    Container(
-                      height: 32, // Fixed height for tags
-                      child: Wrap(
-                        spacing: 6,
-                        runSpacing: 4,
-                        children: (place['moods'] as List<String>)
-                            .take(3)
-                            .map((mood) => Container(
-                          padding: EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                          decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.2),
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(color: Colors.white.withOpacity(0.3)),
-                          ),
-                          child: Text(
-                            mood,
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 9, // Reduced font size
-                            ),
-                          ),
-                        ))
-                            .toList(),
-                      ),
-                    ),
-                    SizedBox(height: 10),
-
-                    // Action Buttons - Made more compact
-                    Row(
-                      children: [
-                        Expanded(
-                          child: ElevatedButton.icon(
-                            onPressed: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => TripCreationScreen(),
-                                ),
-                              );
-                            },
-                            icon: Icon(Icons.airplanemode_active, size: 14),
-                            label: Text('Plan Trip', style: TextStyle(fontSize: 12)),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Color(0xFF2F62A7),
-                              foregroundColor: Colors.white,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              padding: EdgeInsets.symmetric(vertical: 8),
-                            ),
-                          ),
-                        ),
-                        SizedBox(width: 8),
-                        Container(
-                          width: 40,
-                          height: 40,
-                          decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.2),
-                            borderRadius: BorderRadius.circular(10),
-                            border: Border.all(color: Colors.white.withOpacity(0.3)),
-                          ),
-                          child: IconButton(
-                            icon: Icon(Icons.info_outline, color: Colors.white, size: 18),
-                            onPressed: () {
-                              _showPlaceDetails(place);
-                            },
-                            padding: EdgeInsets.zero,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-
-              // Favorite Button
-              Positioned(
-                top: 10,
-                right: 10,
-                child: Container(
-                  width: 36,
-                  height: 36,
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.2),
-                    borderRadius: BorderRadius.circular(18),
-                    border: Border.all(color: Colors.white.withOpacity(0.3)),
-                  ),
-                  child: IconButton(
-                    icon: Icon(Icons.favorite_border, color: Colors.white, size: 18),
-                    onPressed: () {
-                      NotificationService().sendNotification(
-                        context: context,
-                        title: 'Added to Favorites',
-                        message: '${place['name']} added to your favorites',
-                        type: 'success',
-                      );
-                    },
-                    padding: EdgeInsets.zero,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildQuickAction({
-    required String title,
-    required IconData icon,
-    required Color color,
-    required List<Color> gradientColors,
-    required VoidCallback onTap,
-  }) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(15),
-      child: Container(
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(15),
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: gradientColors,
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: color.withOpacity(0.3),
-              blurRadius: 10,
-              offset: Offset(0, 4),
-            ),
-          ],
-        ),
+        borderRadius: BorderRadius.circular(24),
         child: Stack(
+          fit: StackFit.expand,
           children: [
-            // Background pattern
-            Positioned(
-              right: 10,
-              bottom: 10,
-              child: Opacity(
-                opacity: 0.1,
-                child: Icon(
-                  icon,
-                  size: 60,
-                  color: Colors.white,
+            Image.network(place['image'], fit: BoxFit.cover),
+            // Gradient
+            Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter, end: Alignment.bottomCenter,
+                  colors: [Colors.transparent, Colors.black.withOpacity(0.8)],
+                  stops: [0.5, 1.0],
                 ),
               ),
             ),
+            // Content
             Padding(
-              padding: EdgeInsets.all(15),
+              padding: EdgeInsets.all(20),
               child: Column(
+                mainAxisAlignment: MainAxisAlignment.end,
                 crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Container(
-                    width: 40,
-                    height: 40,
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.2),
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: Icon(
-                      icon,
-                      color: Colors.white,
-                      size: 24,
-                    ),
-                  ),
-                  SizedBox(height: 10),
-                  Text(
-                    title,
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
-                    ),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildSectionHeader({required String title, required String subtitle}) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          title,
-          style: TextStyle(
-            fontSize: 22,
-            fontWeight: FontWeight.bold,
-            color: Color(0xFF2F62A7),
-          ),
-        ),
-        SizedBox(height: 5),
-        Text(
-          subtitle,
-          style: TextStyle(
-            color: Colors.grey,
-            fontSize: 14,
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildSuggestionCard(Map<String, dynamic> suggestion) {
-    return Card(
-      margin: EdgeInsets.only(bottom: 10),
-      elevation: 2,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: InkWell(
-        onTap: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => TripCreationScreen(),
-            ),
-          );
-        },
-        borderRadius: BorderRadius.circular(12),
-        child: Padding(
-          padding: EdgeInsets.all(15),
-          child: Row(
-            children: [
-              Container(
-                width: 60,
-                height: 60,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(10),
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [
-                      Color(0xFF4AB4DE),
-                      Color(0xFF3B8AC3),
-                    ],
-                  ),
-                ),
-                child: Icon(Icons.lightbulb_outline, color: Colors.white, size: 30),
-              ),
-              SizedBox(width: 15),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      suggestion['destination'],
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFF2F62A7),
-                        fontSize: 16,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    SizedBox(height: 5),
-                    Text(
-                      suggestion['reason'],
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Colors.grey[700],
-                      ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    SizedBox(height: 8),
-                    Row(
-                      children: [
-                        Container(
-                          padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                          decoration: BoxDecoration(
-                            color: _getCrowdColor(suggestion['crowdLevel']).withOpacity(0.1),
-                            borderRadius: BorderRadius.circular(6),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(Icons.people, size: 12, color: _getCrowdColor(suggestion['crowdLevel'])),
-                              SizedBox(width: 4),
-                              Text(
-                                suggestion['crowdLevel'],
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: _getCrowdColor(suggestion['crowdLevel']),
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        SizedBox(width: 10),
-                        Icon(Icons.calendar_today, size: 12, color: Colors.grey),
-                        SizedBox(width: 4),
-                        Text(
-                          suggestion['bestTime'],
-                          style: TextStyle(fontSize: 12, color: Colors.grey),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-              Icon(Icons.chevron_right, color: Color(0xFF4AB4DE)),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildCategoryGrid() {
-    List<Map<String, dynamic>> categories = [
-      {
-        'title': 'Beach',
-        'icon': Icons.beach_access,
-        'color': Colors.blue,
-        'count': '12 places',
-      },
-      {
-        'title': 'Mountain',
-        'icon': Icons.terrain,
-        'color': Colors.green,
-        'count': '8 places',
-      },
-      {
-        'title': 'City',
-        'icon': Icons.location_city,
-        'color': Colors.orange,
-        'count': '15 places',
-      },
-      {
-        'title': 'Cultural',
-        'icon': Icons.account_balance,
-        'color': Colors.purple,
-        'count': '10 places',
-      },
-    ];
-
-    return GridView.count(
-      shrinkWrap: true,
-      physics: NeverScrollableScrollPhysics(),
-      crossAxisCount: 2,
-      childAspectRatio: 1.8,
-      crossAxisSpacing: 10,
-      mainAxisSpacing: 10,
-      children: categories.map((category) {
-        return Card(
-          elevation: 2,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: InkWell(
-            onTap: () {
-              // Navigate to category-based search
-            },
-            borderRadius: BorderRadius.circular(12),
-            child: Padding(
-              padding: EdgeInsets.all(12), // Reduced padding
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Container(
-                        width: 36, // Reduced size
-                        height: 36,
-                        decoration: BoxDecoration(
-                          color: category['color'].withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(8), // Reduced radius
-                        ),
-                        child: Icon(
-                          category['icon'],
-                          color: category['color'],
-                          size: 20, // Reduced icon size
+                      Text(place['name'], style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),
+                      GestureDetector(
+                        onTap: () => _showPlaceDetails(place),
+                        child: Container(
+                          padding: EdgeInsets.all(8),
+                          decoration: BoxDecoration(color: Colors.white.withOpacity(0.2), shape: BoxShape.circle),
+                          child: Icon(Icons.arrow_forward, color: Colors.white, size: 18),
                         ),
                       ),
-                      Spacer(),
-                      Icon(Icons.chevron_right, color: Colors.grey, size: 18),
                     ],
                   ),
-                  SizedBox(height: 8),
-                  Text(
-                    category['title'],
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 15, // Slightly reduced
-                      color: Color(0xFF2F62A7),
-                    ),
-                  ),
-                  Text(
-                    category['count'],
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Colors.grey,
-                    ),
+                  SizedBox(height: 4),
+                  Row(
+                    children: [
+                      Icon(Icons.people_outline, size: 14, color: Colors.white70),
+                      SizedBox(width: 4),
+                      Text(place['crowdLevel'], style: TextStyle(color: Colors.white70, fontSize: 12)),
+                      SizedBox(width: 12),
+                      Icon(Icons.attach_money, size: 14, color: Colors.white70),
+                      Text(place['priceRange'], style: TextStyle(color: Colors.white70, fontSize: 12)),
+                    ],
                   ),
                 ],
               ),
             ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // --- 5. Suggestions Card ---
+  Widget _buildSuggestionCard(Map<String, dynamic> item) {
+    return Container(
+      margin: EdgeInsets.only(bottom: 16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 10, offset: Offset(0, 4))],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => TripCreationScreen())),
+          borderRadius: BorderRadius.circular(20),
+          child: Padding(
+            padding: EdgeInsets.all(16),
+            child: Row(
+              children: [
+                Container(
+                  padding: EdgeInsets.all(12),
+                  decoration: BoxDecoration(color: Color(0xFFE3F2FD), borderRadius: BorderRadius.circular(14)),
+                  child: Icon(Icons.auto_awesome, color: Color(0xFF2F62A7)),
+                ),
+                SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(item['destination'], style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Color(0xFF1A3E6D))),
+                      SizedBox(height: 4),
+                      Text(item['reason'], style: TextStyle(color: Colors.grey[600], fontSize: 13), maxLines: 2),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  // --- 6. Stories ---
+  Widget _buildTravelStories() {
+    return Column(
+      children: travelStories.map((story) {
+        return Container(
+          margin: EdgeInsets.only(bottom: 16),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(20),
+            boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 10, offset: Offset(0, 4))],
+          ),
+          child: Row(
+            children: [
+              ClipRRect(
+                borderRadius: BorderRadius.only(topLeft: Radius.circular(20), bottomLeft: Radius.circular(20)),
+                child: Image.network(story['image'], width: 100, height: 110, fit: BoxFit.cover),
+              ),
+              Expanded(
+                child: Padding(
+                  padding: EdgeInsets.all(12),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Container(
+                        padding: EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                        decoration: BoxDecoration(color: Color(0xFFE1F5FE), borderRadius: BorderRadius.circular(6)),
+                        child: Text(story['category'], style: TextStyle(fontSize: 10, color: Color(0xFF29B6F6), fontWeight: FontWeight.bold)),
+                      ),
+                      SizedBox(height: 6),
+                      Text(story['title'], style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Colors.black87), maxLines: 1, overflow: TextOverflow.ellipsis),
+                      SizedBox(height: 4),
+                      Text(story['excerpt'], style: TextStyle(fontSize: 11, color: Colors.grey[600]), maxLines: 2, overflow: TextOverflow.ellipsis),
+                    ],
+                  ),
+                ),
+              ),
+            ],
           ),
         );
       }).toList(),
     );
   }
 
-  Widget _buildBottomNavigationBar() {
-    return Container(
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.only(
-          topLeft: Radius.circular(20),
-          topRight: Radius.circular(20),
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.1),
-            blurRadius: 20,
-            spreadRadius: 1,
-          ),
-        ],
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.only(
-          topLeft: Radius.circular(20),
-          topRight: Radius.circular(20),
-        ),
-        child: BottomNavigationBar(
-          items: const <BottomNavigationBarItem>[
-            BottomNavigationBarItem(
-              icon: Icon(Icons.home),
-              label: 'Home',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.explore),
-              label: 'Explore',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.smart_toy),
-              label: 'AI',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.settings),
-              label: 'Settings',
-            ),
-          ],
-          currentIndex: _selectedIndex,
-          selectedItemColor: Color(0xFF2F62A7),
-          unselectedItemColor: Colors.grey,
-          showUnselectedLabels: true,
-          type: BottomNavigationBarType.fixed,
-          onTap: _onItemTapped,
-          elevation: 10,
-        ),
-      ),
-    );
-  }
-
+  // --- 7. Modal Bottom Sheet (Details) ---
   void _showPlaceDetails(Map<String, dynamic> place) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (context) => Container(
-        height: MediaQuery.of(context).size.height * 0.85, // Reduced slightly
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(25)),
-        ),
-        child: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Header Image
-              Container(
-                height: 200,
-                width: double.infinity,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.vertical(top: Radius.circular(25)),
-                  image: DecorationImage(
-                    image: NetworkImage(place['image']),
-                    fit: BoxFit.cover,
-                  ),
-                ),
-                child: Stack(
+      builder: (context) => DraggableScrollableSheet(
+        initialChildSize: 0.85,
+        minChildSize: 0.5,
+        maxChildSize: 0.95,
+        builder: (_, controller) {
+          return Container(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
+            ),
+            child: ListView(
+              controller: controller,
+              padding: EdgeInsets.all(0),
+              children: [
+                Stack(
                   children: [
-                    Container(
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.vertical(top: Radius.circular(25)),
-                        gradient: LinearGradient(
-                          begin: Alignment.bottomCenter,
-                          end: Alignment.topCenter,
-                          colors: [
-                            Colors.black.withOpacity(0.7),
-                            Colors.transparent,
-                          ],
-                        ),
-                      ),
-                    ),
+                    Image.network(place['image'], height: 300, width: double.infinity, fit: BoxFit.cover),
                     Positioned(
-                      top: 15,
-                      right: 15,
-                      child: IconButton(
-                        icon: Icon(Icons.close, color: Colors.white),
-                        onPressed: () => Navigator.pop(context),
+                      top: 16, right: 16,
+                      child: GestureDetector(
+                        onTap: () => Navigator.pop(context),
+                        child: CircleAvatar(backgroundColor: Colors.black38, child: Icon(Icons.close, color: Colors.white)),
                       ),
                     ),
                   ],
                 ),
-              ),
-
-              // Content
-              Padding(
-                padding: EdgeInsets.all(20),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            place['name'],
-                            style: TextStyle(
-                              fontSize: 24, // Reduced
-                              fontWeight: FontWeight.bold,
-                              color: Color(0xFF2F62A7),
-                            ),
-                          ),
-                        ),
-                        Container(
-                          padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                          decoration: BoxDecoration(
-                            color: _getCrowdColor(place['crowdLevel']),
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          child: Text(
-                            place['crowdLevel'],
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    SizedBox(height: 10),
-
-                    Text(
-                      place['description'],
-                      style: TextStyle(fontSize: 16, color: Colors.black),
-                    ),
-                    SizedBox(height: 20),
-
-                    // Details Grid
-                    GridView.count(
-                      shrinkWrap: true,
-                      physics: NeverScrollableScrollPhysics(),
-                      crossAxisCount: 2,
-                      childAspectRatio: 3,
-                      crossAxisSpacing: 10,
-                      mainAxisSpacing: 10,
-                      children: [
-                        _buildDetailItem(Icons.calendar_today, 'Best Time', place['bestTime']),
-                        _buildDetailItem(Icons.attach_money, 'Price Range', place['priceRange']),
-                        _buildDetailItem(Icons.people, 'Crowd Level', place['crowdLevel']),
-                        _buildDetailItem(Icons.star, 'AI Rating', '4.8/5'),
-                      ],
-                    ),
-                    SizedBox(height: 20),
-
-                    // Moods
-                    Text(
-                      'Perfect For:',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFF2F62A7),
-                      ),
-                    ),
-                    SizedBox(height: 10),
-                    Wrap(
-                      spacing: 10,
-                      runSpacing: 10,
-                      children: (place['moods'] as List<String>)
-                          .map((mood) => Chip(
-                        label: Text(mood),
-                        backgroundColor: Color(0xFF4AB4DE).withOpacity(0.1),
-                        avatar: Icon(
-                          _getMoodIcon(mood),
-                          color: Color(0xFF4AB4DE),
-                        ),
-                      ))
-                          .toList(),
-                    ),
-                    SizedBox(height: 20),
-
-                    // Why Visit Now
-                    Text(
-                      'Why Visit Now:',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFF2F62A7),
-                      ),
-                    ),
-                    SizedBox(height: 10),
-                    Container(
-                      padding: EdgeInsets.all(15),
-                      decoration: BoxDecoration(
-                        color: Color(0xFFEEDBCC),
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                Padding(
+                  padding: EdgeInsets.all(24),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Text(
-                            '• Perfect weather conditions',
-                            style: TextStyle(color: Colors.black),
+                          Expanded(
+                            child: Text(place['name'], style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold, color: Color(0xFF1A3E6D))),
                           ),
-                          Text(
-                            '• Lower prices than peak season',
-                            style: TextStyle(color: Colors.black),
-                          ),
-                          Text(
-                            '• Cultural festivals happening',
-                            style: TextStyle(color: Colors.black),
-                          ),
-                          Text(
-                            '• Less crowded than usual',
-                            style: TextStyle(color: Colors.black),
+                          Container(
+                            padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                            decoration: BoxDecoration(color: _getCrowdColor(place['crowdLevel']), borderRadius: BorderRadius.circular(12)),
+                            child: Text(place['crowdLevel'], style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
                           ),
                         ],
                       ),
-                    ),
-                    SizedBox(height: 20),
+                      SizedBox(height: 16),
+                      Text(place['description'], style: TextStyle(fontSize: 16, color: Colors.grey[700], height: 1.5)),
+                      SizedBox(height: 24),
 
-                    // Action Buttons
-                    Row(
-                      children: [
-                        Expanded(
-                          child: ElevatedButton.icon(
-                            onPressed: () {
-                              Navigator.pop(context);
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => TripCreationScreen(),
-                                ),
-                              );
-                            },
-                            icon: Icon(Icons.airplanemode_active),
-                            label: Text('Plan Trip Here'),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Color(0xFF2F62A7),
-                              padding: EdgeInsets.symmetric(vertical: 15),
-                            ),
+                      // --- ROBUST DETAILS GRID ---
+                      LayoutBuilder(
+                          builder: (context, constraints) {
+                            // Force a comfortable height for detail items (e.g., 60px)
+                            final itemWidth = (constraints.maxWidth - 12) / 2;
+                            final ratio = itemWidth / 60.0;
+
+                            return GridView.count(
+                              shrinkWrap: true,
+                              physics: NeverScrollableScrollPhysics(),
+                              crossAxisCount: 2,
+                              childAspectRatio: ratio,
+                              crossAxisSpacing: 12,
+                              mainAxisSpacing: 12,
+                              children: [
+                                _buildDetailItem(Icons.calendar_month, 'Best Time', place['bestTime']),
+                                _buildDetailItem(Icons.paid, 'Price', place['priceRange']),
+                                _buildDetailItem(Icons.groups, 'Crowd', place['crowdLevel']),
+                                _buildDetailItem(Icons.star, 'Rating', '4.9/5.0'),
+                              ],
+                            );
+                          }
+                      ),
+
+                      SizedBox(height: 24),
+                      Text('Perfect For', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF1A3E6D))),
+                      SizedBox(height: 12),
+                      Wrap(
+                        spacing: 8, runSpacing: 8,
+                        children: (place['moods'] as List<String>).map((m) => Chip(
+                          label: Text(m),
+                          backgroundColor: Color(0xFFE3F2FD),
+                          labelStyle: TextStyle(color: Color(0xFF2F62A7)),
+                          avatar: Icon(Icons.check, size: 16, color: Color(0xFF2F62A7)),
+                        )).toList(),
+                      ),
+                      SizedBox(height: 40),
+
+                      // Action Button
+                      SizedBox(
+                        width: double.infinity,
+                        height: 55,
+                        child: ElevatedButton(
+                          onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => TripCreationScreen())),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Color(0xFF2F62A7),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                            elevation: 5,
+                            shadowColor: Color(0xFF2F62A7).withOpacity(0.4),
                           ),
+                          child: Text('Plan Trip Here', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
                         ),
-                        SizedBox(width: 10),
-                        IconButton(
-                          icon: Icon(Icons.share, color: Color(0xFF4AB4DE)),
-                          onPressed: () {
-                            // Share place
-                          },
-                          style: IconButton.styleFrom(
-                            backgroundColor: Color(0xFF4AB4DE).withOpacity(0.1),
-                            padding: EdgeInsets.all(15),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
+                      ),
+                      SizedBox(height: 20),
+                    ],
+                  ),
                 ),
-              ),
-            ],
-          ),
-        ),
+              ],
+            ),
+          );
+        },
       ),
     );
   }
 
   Widget _buildDetailItem(IconData icon, String label, String value) {
     return Container(
-      padding: EdgeInsets.all(12),
+      padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
         color: Colors.grey[50],
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(12),
         border: Border.all(color: Colors.grey[200]!),
       ),
       child: Row(
         children: [
           Icon(icon, color: Color(0xFF4AB4DE), size: 20),
           SizedBox(width: 10),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                label,
-                style: TextStyle(
-                  fontSize: 12,
-                  color: Colors.grey,
-                ),
-              ),
-              Text(
-                value,
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF2F62A7),
-                ),
-              ),
-            ],
+          Expanded( // Prevents overflow
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(label, style: TextStyle(fontSize: 11, color: Colors.grey[500]), maxLines: 1),
+                Text(value, style: TextStyle(fontWeight: FontWeight.w700, color: Color(0xFF2F62A7), fontSize: 13), maxLines: 1, overflow: TextOverflow.ellipsis),
+              ],
+            ),
           ),
         ],
       ),
     );
-  }
-
-  IconData _getMoodIcon(String mood) {
-    switch (mood.toLowerCase()) {
-      case 'romantic':
-        return Icons.favorite;
-      case 'adventure':
-        return Icons.terrain;
-      case 'nature':
-        return Icons.park;
-      case 'cultural':
-        return Icons.account_balance;
-      case 'relaxation':
-        return Icons.spa;
-      case 'shopping':
-        return Icons.shopping_bag;
-      case 'food exploration':
-        return Icons.restaurant;
-      case 'photography':
-        return Icons.camera_alt;
-      default:
-        return Icons.emoji_emotions;
-    }
   }
 }
